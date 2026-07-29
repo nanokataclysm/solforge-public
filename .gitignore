@@ -1,0 +1,56 @@
+# Secrets and local env
+.env
+.env.*
+!.env.example
+.env.cloudrun.local
+apps/orchestrator/.env.cloudrun.local
+.cr_run.env
+
+# Development signing keys (private only — public PEM may be committed)
+.nanokat/keys/*private*.pem
+.nanokat/keys/*secret*
+
+# Dependencies and runtime junk
+node_modules/
+__pycache__/
+*.pyc
+.venv*/
+.venv-mcp/
+
+# Large / non-product local tools
+apps/orchestrator/aliyun
+apps/orchestrator/aliyun-cli*
+apps/orchestrator/node
+apps/orchestrator/orchestrator@1.0.0
+*.tgz
+*.tar.gz
+*.zip
+
+# Editor / agent scratch
+.firecrawl/
+.qwen/
+.idea/
+.vscode/
+*.swp
+*~
+
+# Local backups and one-off dumps
+backup/
+*.bak.*
+*.before-*
+apps/orchestrator/**/*.bak.*
+apps/orchestrator/**/*.before-*
+
+# Optional noisy local research (keep out of ship tree)
+RECONCILIATION.md
+NANOKAT_MISSION_SOCIETY_REVISED_REMEDIATION.md
+dudebro.md
+directories-hope.md
+
+# Operator local WIP (not part of ship tree)
+local-scratch/
+
+.venv-tts/
+
+# Evidence build intermediates
+.vercel

@@ -1,0 +1,5 @@
+.env*
+.gcloudignore
+node_modules
+*.log
+src/agents

@@ -1,0 +1,29 @@
+{
+  "name": "orchestrator",
+  "version": "1.0.0",
+  "description": "NANOKAT Forge orchestrator — Qwen plan + human-gated preview",
+  "main": "server.mjs",
+  "scripts": {
+    "test": "VERCEL=0 node --test test/auth-session.test.mjs test/login-rate-limit.test.mjs test/login-rate-limit-route.test.mjs test/preview.test.mjs test/approval-session.test.mjs test/server.test.mjs test/signing.test.mjs test/package.test.mjs test/verification.test.mjs test/mission-society.test.mjs test/model-router.test.mjs test/vercel-entrypoint.test.mjs",
+    "test:vercel-entrypoint": "node --test test/vercel-entrypoint.test.mjs",
+    "start": "node server.mjs",
+    "smoke": "node scripts/smoke-cli.mjs",
+    "validate-roles": "node ../../tools/validator/validate-solforge-roles.mjs"
+  },
+  "keywords": [
+    "nanokat",
+    "forge",
+    "qwen"
+  ],
+  "author": "NANOKAT",
+  "license": "ISC",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "express": "^5.2.1",
+    "openai": "^6.48.0"
+  },
+  "type": "module"
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Solforge Qwen model routing manifest - deterministic token-max selection",
+  "version": "1.0.0",
+  "allowlist": [
+    "qwen-turbo",
+    "qwen-plus",
+    "qwen-max",
+    "qwen-long"
+  ],
+  "models": [
+    {
+      "id": "qwen-turbo",
+      "roles": ["repair", "navigator", "specialist"],
+      "contextWindow": 8192,
+      "maxOutput": 1500,
+      "priority": 10,
+      "description": "Fast, cost-effective for light tasks"
+    },
+    {
+      "id": "qwen-plus",
+      "roles": ["planner", "chair", "builder", "repair", "navigator", "specialist"],
+      "contextWindow": 32768,
+      "maxOutput": 2000,
+      "priority": 20,
+      "description": "Balanced quality and cost for planning"
+    },
+    {
+      "id": "qwen-max",
+      "roles": ["planner", "chair", "builder"],
+      "contextWindow": 8192,
+      "maxOutput": 2000,
+      "priority": 30,
+      "description": "Highest quality for complex reasoning"
+    },
+    {
+      "id": "qwen-long",
+      "roles": ["planner", "chair", "builder"],
+      "contextWindow": 1000000,
+      "maxOutput": 6000,
+      "priority": 40,
+      "description": "Extended context for large documents"
+    }
+  ],
+  "roleDefaults": {
+    "planner": "qwen-plus",
+    "repair": "qwen-turbo",
+    "navigator": "qwen-turbo",
+    "specialist": "qwen-turbo",
+    "chair": "qwen-plus",
+    "builder": "qwen-plus"
+  },
+  "tokenEstimation": {
+    "method": "conservative",
+    "charsPerToken": 3.5,
+    "safetyMargin": 1.2,
+    "description": "Conservative estimate: 3.5 chars/token with 20% safety margin"
+  },
+  "retryPolicy": {
+    "retryableErrors": [
+      "AllocationQuota.FreeTierOnly",
+      "Throttling.RateQuota",
+      "Throttling.User"
+    ],
+    "maxRetries": 3,
+    "noRetryErrors": [
+      "InvalidAuthentication",
+      "PermissionDenied",
+      "InvalidRequest",
+      "SafetyViolation",
+      "PolicyRejection",
+      "Timeout"
+    ]
+  }
+}

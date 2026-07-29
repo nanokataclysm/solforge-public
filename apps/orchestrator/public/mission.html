@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mission Society - Solforge</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .mission-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .mission-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .mission-header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .mission-header p {
+      color: #666;
+      font-size: 1.1rem;
+    }
+    .brief-section {
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .brief-section textarea {
+      width: 100%;
+      min-height: 150px;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 1rem;
+      resize: vertical;
+    }
+    .analyze-btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .analyze-btn:hover {
+      background: #1d4ed8;
+    }
+    .analyze-btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+    .society-section {
+      margin-top: 3rem;
+    }
+    .agent-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .agent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .agent-role {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #1f2937;
+    }
+    .agent-status {
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .agent-status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .agent-status.failed {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .agent-content {
+      color: #4b5563;
+      line-height: 1.6;
+    }
+    .agent-content h4 {
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      color: #374151;
+      font-size: 0.95rem;
+    }
+    .agent-content ul {
+      margin: 0.5rem 0;
+      padding-left: 1.5rem;
+    }
+    .disagreements-section {
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+    }
+    .disagreements-section h3 {
+      color: #92400e;
+      margin-bottom: 1rem;
+    }
+    .resolution-section {
+      background: #dbeafe;
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+    }
+    .resolution-section h3 {
+      color: #1e40af;
+      margin-bottom: 1rem;
+    }
+    .proposed-actions {
+      margin-top: 2rem;
+    }
+    .action-item {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .action-item h4 {
+      margin: 0 0 0.5rem 0;
+      color: #1f2937;
+    }
+    .action-effects {
+      font-size: 0.9rem;
+      color: #059669;
+      margin: 0.5rem 0;
+    }
+    .action-non-effects {
+      font-size: 0.9rem;
+      color: #dc2626;
+      margin: 0.5rem 0;
+    }
+    .trace-section {
+      background: #f3f4f6;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 2rem;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+    .trace-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .trace-section li {
+      padding: 0.25rem 0;
+      color: #4b5563;
+    }
+    .trace-section li:before {
+      content: "→ ";
+      color: #9ca3af;
+    }
+    .message {
+      padding: 1rem;
+      border-radius: 6px;
+      margin: 1rem 0;
+    }
+    .message.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    .message.info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+  </style>
+</head>
+<body>
+  <div class="mission-container">
+    <div class="mission-header">
+      <h1>Mission Society Analysis</h1>
+      <p>Describe your mission and let the specialist society analyze it</p>
+    </div>
+
+    <div class="brief-section">
+      <label for="brief"><strong>Mission Brief</strong></label>
+      <textarea
+        id="brief"
+        placeholder="Describe what you're trying to accomplish, your constraints, and what success looks like..."
+      ></textarea>
+      <button id="analyzeBtn" class="analyze-btn">Analyze Mission</button>
+    </div>
+
+    <div id="message"></div>
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const briefInput = document.getElementById('brief');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const messageDiv = document.getElementById('message');
+    const resultsDiv = document.getElementById('results');
+
+    function element(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = String(text);
+      return node;
+    }
+
+    function showMessage(text, type = 'info') {
+      messageDiv.replaceChildren(element('div', `message ${type}`, text));
+    }
+
+    function clearMessage() {
+      messageDiv.replaceChildren();
+    }
+
+    function appendList(parent, title, items) {
+      if (!Array.isArray(items) || items.length === 0) return;
+      parent.appendChild(element('h4', '', title));
+      const list = element('ul');
+      for (const item of items) {
+        list.appendChild(element('li', '', item));
+      }
+      parent.appendChild(list);
+    }
+
+    function agentCard(role, ok = true) {
+      const card = element('div', 'agent-card');
+      const header = element('div', 'agent-header');
+      header.appendChild(element('div', 'agent-role', role));
+      header.appendChild(
+        element(
+          'div',
+          `agent-status ${ok ? 'success' : 'failed'}`,
+          ok ? 'Completed' : 'Failed',
+        ),
+      );
+      const content = element('div', 'agent-content');
+      card.append(header, content);
+      return { card, content };
+    }
+
+    async function analyzeMission() {
+      const brief = briefInput.value.trim();
+      if (!brief) {
+        showMessage('Please enter a mission brief', 'error');
+        return;
+      }
+
+      analyzeBtn.disabled = true;
+      analyzeBtn.textContent = 'Analyzing...';
+      clearMessage();
+      resultsDiv.replaceChildren();
+
+      try {
+        const response = await fetch('/api/mission/analyze', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-solforge-csrf': '1'
+          },
+          body: JSON.stringify({ brief })
+        });
+
+        const data = await response.json();
+
+        if (!data.ok) {
+          showMessage(data.error || 'Analysis failed', 'error');
+          return;
+        }
+
+        renderResults(data);
+      } catch (error) {
+        showMessage('Network error: ' + error.message, 'error');
+      } finally {
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = 'Analyze Mission';
+      }
+    }
+
+    function renderResults(data) {
+      resultsDiv.replaceChildren();
+      const society = element('div', 'society-section');
+
+      if (data.mission) {
+        const { card, content } = agentCard('Navigator - Mission Compilation');
+        content.appendChild(
+          element('pre', '', JSON.stringify(data.mission, null, 2)),
+        );
+        society.appendChild(card);
+      }
+
+      if (Array.isArray(data.analyses) && data.analyses.length > 0) {
+        society.appendChild(element('h2', '', 'Specialist Analyses'));
+        for (const analysis of data.analyses) {
+          const { card, content } = agentCard(
+            analysis.roleId || 'Specialist',
+            Boolean(analysis.ok),
+          );
+          if (analysis.ok && analysis.output) {
+            const output = analysis.output;
+            if (output.position) {
+              content.appendChild(element('p', '', `Position: ${output.position}`));
+            }
+            appendList(content, 'Recommendations:', output.recommendations);
+            appendList(content, 'Risks:', output.risks);
+            const confidence = Number(output.confidence);
+            if (Number.isFinite(confidence)) {
+              content.appendChild(
+                element('p', '', `Confidence: ${(confidence * 100).toFixed(0)}%`),
+              );
+            }
+          } else {
+            content.appendChild(
+              element('p', 'error', analysis.error || 'Analysis failed'),
+            );
+          }
+          society.appendChild(card);
+        }
+      }
+
+      if (Array.isArray(data.disagreements) && data.disagreements.length > 0) {
+        const disagreements = element('div', 'disagreements-section');
+        disagreements.appendChild(
+          element('h3', '', '⚠️ Material Disagreements'),
+        );
+        for (const disagreement of data.disagreements) {
+          disagreements.appendChild(element('p', '', disagreement));
+        }
+        society.appendChild(disagreements);
+      }
+
+      if (data.missionPlan) {
+        const resolution = element('div', 'resolution-section');
+        resolution.appendChild(element('h3', '', 'Council Chair Resolution'));
+        resolution.appendChild(
+          element(
+            'pre',
+            'agent-content',
+            JSON.stringify(data.missionPlan, null, 2),
+          ),
+        );
+        society.appendChild(resolution);
+      }
+
+      if (Array.isArray(data.proposedActions) && data.proposedActions.length > 0) {
+        const actions = element('div', 'proposed-actions');
+        actions.appendChild(element('h2', '', 'Proposed Actions'));
+        for (const action of data.proposedActions) {
+          const item = element('div', 'action-item');
+          item.appendChild(element('h4', '', action.id || 'Action'));
+          item.appendChild(element('p', '', action.description || ''));
+          if (Array.isArray(action.effects) && action.effects.length > 0) {
+            item.appendChild(
+              element(
+                'div',
+                'action-effects',
+                `✓ Effects: ${action.effects.join(', ')}`,
+              ),
+            );
+          }
+          if (Array.isArray(action.doesNotDo) && action.doesNotDo.length > 0) {
+            item.appendChild(
+              element(
+                'div',
+                'action-non-effects',
+                `✗ Does NOT: ${action.doesNotDo.join(', ')}`,
+              ),
+            );
+          }
+          actions.appendChild(item);
+        }
+        society.appendChild(actions);
+      }
+
+      if (Array.isArray(data.trace) && data.trace.length > 0) {
+        const trace = element('div', 'trace-section');
+        trace.appendChild(element('h3', '', 'Execution Trace'));
+        const list = element('ul');
+        for (const step of data.trace) {
+          list.appendChild(element('li', '', step));
+        }
+        trace.appendChild(list);
+        society.appendChild(trace);
+      }
+
+      resultsDiv.appendChild(society);
+    }
+
+    analyzeBtn.addEventListener('click', analyzeMission);
+    fetch('/api/auth/session', { credentials: 'same-origin' })
+      .then(response => response.json())
+      .then(session => {
+        if (!session.authenticated) {
+          showMessage('Log in from the main Solforge page before analysis.', 'error');
+        }
+      })
+      .catch(() => showMessage('Authentication status unavailable.', 'error'));
+  </script>
+</body>
+</html>

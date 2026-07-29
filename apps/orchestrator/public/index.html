@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Solforge — Human-Gated AI Web Planning</title>
+  <meta
+    name="description"
+    content="Human-gated AI website planning: Qwen structures your brief, you inspect and approve the plan, then receive an isolated preview and cryptographically signed Ed25519 package."
+  >
+  <meta name="theme-color" content="#0a0b10">
+  <link rel="stylesheet" href="./styles.css?v=10">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="hero-main">
+        <div class="hero-brand">
+          <span class="eyebrow">Solforge · Human-Gated AI Workshop</span>
+          <span class="alpha-tag">Public Alpha</span>
+        </div>
+        <h1>Messy brief in. Human-gated plan. Signed package out.</h1>
+        <p class="lede">
+          Qwen structures your creative brief into an actionable site architecture.
+          You inspect and approve the consequential step before execution.
+          An isolated sandbox renders a preview that never touches live production,
+          never alters DNS, and produces a cryptographically signed Ed25519 artifact.
+        </p>
+        <ul class="chip-row" aria-label="Runtime facts">
+          <li class="chip"><span class="chip-dot" aria-hidden="true"></span> Live inference: Qwen</li>
+          <li class="chip"><span class="chip-dot" aria-hidden="true"></span> Host: Google Cloud Run</li>
+          <li class="chip"><span class="chip-dot" aria-hidden="true"></span> Gate: Session-bound approve</li>
+          <li class="chip"><span class="chip-dot" aria-hidden="true"></span> Security: Ed25519 Signed</li>
+        </ul>
+      </div>
+
+      <div class="status-stack">
+        <div class="status" id="status-pill">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="status-label">Checking…</span>
+        </div>
+        <p class="status-sub" id="status-sub">Loading health…</p>
+        <button id="logout-button" class="secondary hidden" type="button">
+          Log out
+        </button>
+      </div>
+    </header>
+
+    <!-- Workflow Progress Stepper -->
+    <nav class="forge-stepper" aria-label="Workflow progress">
+      <ol class="stepper-list">
+        <li class="stepper-step is-active" id="step-1-indicator">
+          <span class="step-badge">1</span>
+          <span class="step-label">Creative Brief</span>
+        </li>
+        <li class="stepper-connector" aria-hidden="true"></li>
+        <li class="stepper-step" id="step-2-indicator">
+          <span class="step-badge">2</span>
+          <span class="step-label">Human Plan Review</span>
+        </li>
+        <li class="stepper-connector" aria-hidden="true"></li>
+        <li class="stepper-step" id="step-3-indicator">
+          <span class="step-badge">3</span>
+          <span class="step-label">Signed Package &amp; Preview</span>
+        </li>
+      </ol>
+    </nav>
+
+    <!-- Step 1: Brief Intake -->
+    <section class="panel" id="intake-panel">
+      <div class="step-heading">
+        <span class="step-number">1</span>
+        <div>
+          <h2>Describe your website vision</h2>
+          <p>Provide loose notes, brand guidelines, or audience goals. Qwen will structure them into a formal plan.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="access-code">
+          <span>Demo access code</span>
+          <span class="label-hint">Required once to authorize session</span>
+        </label>
+        <input
+          id="access-code"
+          type="password"
+          autocomplete="off"
+          placeholder="Private demo access code"
+        >
+      </div>
+
+      <div class="form-group">
+        <div class="label-row">
+          <label for="brief">Business brief</label>
+          <span class="label-hint">Describe business type, colors, pages, or style</span>
+        </div>
+        <textarea id="brief" rows="7" placeholder="Describe your business, preferred aesthetics, target audience, and key pages...">Moonlit Kiln is an Austin pottery studio selling handmade mugs and offering weekend classes. The owner likes clay red, cream, and midnight blue. The site should feel handcrafted, calm, and easy to navigate.</textarea>
+
+        <div class="preset-briefs" aria-label="Sample creative briefs">
+          <span class="preset-label">Sample briefs:</span>
+          <button type="button" class="preset-chip" data-brief="Moonlit Kiln is an Austin pottery studio selling handmade mugs and offering weekend classes. The owner likes clay red, cream, and midnight blue. The site should feel handcrafted, calm, and easy to navigate.">Pottery Studio</button>
+          <button type="button" class="preset-chip" data-brief="Aura Coffee is a specialty espresso bar in Seattle offering single-origin coffee subscriptions and barista workshops. Earthy dark tones, modern typography, minimalist product grid.">Specialty Coffee</button>
+          <button type="button" class="preset-chip" data-brief="Veloce AI is an edge-first developer platform providing real-time AI code execution. High-tech obsidian dark mode, neon cyan accents, interactive terminal mockups, and pricing calculator.">Developer Tool</button>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button id="plan-button" type="button" class="primary-btn">
+          <span class="btn-spinner hidden" id="plan-spinner" aria-hidden="true"></span>
+          <span class="btn-text">Generate AI Plan with Qwen</span>
+        </button>
+      </div>
+      <p class="message" id="plan-message" aria-live="polite"></p>
+    </section>
+
+    <!-- Step 2: Human Approval Checkpoint -->
+    <section class="panel hidden" id="approval-panel">
+      <div class="step-heading">
+        <span class="step-number step-number-gate">2</span>
+        <div>
+          <div class="heading-badge-row">
+            <h2>Review proposed AI plan</h2>
+            <span class="badge badge-human-gate">Human Checkpoint</span>
+          </div>
+          <p>Nothing is built or previewed until you explicitly approve. Approval binds a short-lived server session.</p>
+        </div>
+      </div>
+
+      <div id="plan-summary"></div>
+
+      <div class="approval-callout">
+        <div class="callout-header">
+          <span class="callout-icon" aria-hidden="true">🔒</span>
+          <strong>Security Boundary · Session-Bound Approval</strong>
+        </div>
+        <p>
+          Approving issues an HttpOnly approval cookie bound to this login session, operation type,
+          exact SHA-256 plan digest, and a single-use nonce. This process never deploys live site code,
+          never modifies DNS, and operates within an isolated sandbox.
+        </p>
+      </div>
+
+      <div class="actions">
+        <button id="approve-button" class="primary-btn approve-btn" type="button">
+          <span class="btn-spinner hidden" id="approve-spinner" aria-hidden="true"></span>
+          <span>Approve Plan &amp; Build Preview</span>
+        </button>
+        <button id="revise-button" class="secondary" type="button">
+          ← Revise Brief
+        </button>
+      </div>
+      <p class="message" id="build-message" aria-live="polite"></p>
+    </section>
+
+    <!-- Step 3: Validated Preview & Signed Package -->
+    <section class="panel hidden" id="result-panel">
+      <div class="step-heading">
+        <span class="step-number step-number-success">3</span>
+        <div>
+          <h2>Validated preview &amp; Ed25519 signed package</h2>
+          <p>Build completed after human approval. Package receipt is cryptographically signed and verified.</p>
+        </div>
+      </div>
+
+      <div class="result-section">
+        <h3 class="section-title">
+          <span class="title-icon" aria-hidden="true">🛡️</span>
+          Cryptographic Audit Trace &amp; Identity Verification
+        </h3>
+        <div class="trace" id="execution-trace"></div>
+      </div>
+
+      <div class="result-section">
+        <div class="preview-header-bar">
+          <h3 class="section-title">
+            <span class="title-icon" aria-hidden="true">🖥️</span>
+            Isolated Sandbox Preview
+          </h3>
+          <span class="badge badge-sandbox">Isolated Build · No Live Deploy</span>
+        </div>
+        <div class="preview-frame" id="preview-frame"></div>
+      </div>
+
+      <div class="actions result-actions">
+        <button id="download-button" class="primary-btn download-btn" type="button">
+          <span class="btn-icon" aria-hidden="true">⬇</span>
+          <span>Download Signed Package (JSON)</span>
+        </button>
+        <button id="restart-button" class="secondary" type="button">
+          Start Another Brief
+        </button>
+      </div>
+      <p class="message" id="package-message" aria-live="polite"></p>
+    </section>
+
+    <footer class="site-footer">
+      <div class="footer-content">
+        <p>
+          <strong>Solforge</strong> — Human-Gated AI Website Planning &amp; Verification
+        </p>
+        <p class="footer-sub">
+          Process tools: GPT-5.6 / Codex · Live inference: Qwen ·
+          <a href="https://github.com/nanokataclysm/nanokat-forge" target="_blank" rel="noopener noreferrer">Source Repository</a>
+        </p>
+      </div>
+    </footer>
+  </main>
+
+  <script src="./app.js?v=10" defer></script>
+</body>
+</html>

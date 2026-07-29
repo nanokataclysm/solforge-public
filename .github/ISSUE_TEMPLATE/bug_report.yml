@@ -1,0 +1,64 @@
+name: Bug report
+description: Something broken in Forge (API, UI, deploy, tests, docs).
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for flagging an issue. **Do not paste API keys, demo tokens, or private PEMs.**
+        Operator host is Ubuntu on MBP (Linux) — note if your environment differs.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - API (/api/plan, /api/build-preview, /health)
+        - Frontend (public UI)
+        - Cloud Run / hosting
+        - Auth / demo token gate
+        - Palette / preview rendering
+        - Tests
+        - Docs / evidence
+        - MCP / agent scaffolding
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Expected vs actual. Include request path and status codes if API-related.
+      placeholder: "e.g. POST /api/build-preview with approved=true returned 422…"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Submit brief …
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: "e.g. Cloud Run prod URL, local node version, browser"
+      placeholder: "Cloud Run nanokat-forge / Node 20 / Firefox"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / health JSON (redacted)
+      description: Paste `/health` or error bodies with secrets stripped.
+  - type: checkboxes
+    id: honesty
+    attributes:
+      label: Checks
+      options:
+        - label: I did not include secrets or private keys
+          required: true
+        - label: I checked this is Forge (`nanokat-forge`), not dash.nanokat.com
+          required: false

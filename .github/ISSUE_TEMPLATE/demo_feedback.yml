@@ -1,0 +1,45 @@
+name: Demo / judge feedback
+description: Notes from trying the Solforge public alpha.
+title: "[demo] "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Live demo: https://solforge.nanokat.com
+        **Do not paste the demo access code into this issue if the repo is public.**
+  - type: dropdown
+    id: path
+    attributes:
+      label: What did you try?
+      options:
+        - Full plan → approve → preview
+        - Health only
+        - Demo video or screenshots
+        - Repo docs only
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: vibe
+    attributes:
+      label: Overall
+      options:
+        - Worked as expected
+        - Worked with friction
+        - Broken
+        - Unclear docs
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: What helped, what confused, what you’d change.
+    validations:
+      required: true
+  - type: input
+    id: brief
+    attributes:
+      label: Brief used (optional, no secrets)
+      placeholder: "Austin pottery studio, four pages…"

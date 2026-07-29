@@ -1,0 +1,2 @@
+mcp
+qdrant-client[fastembed]
