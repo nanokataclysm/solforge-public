@@ -90,110 +90,6 @@ export function createAuthStore(options = {}) {
   };
 }
 
-export function createNeonAuthStore(options = {}) {
-  const ttlMs = options.ttlMs ?? DEFAULT_AUTH_TTL_MS;
-  const connectionString =
-    options.connectionString ??
-    process.env.SOLFORGE_DATABASE_URL ??
-    process.env.DATABASE_URL ??
-    process.env.NEON_DATABASE_URL ??
-    "";
-  let sql = options.sql ?? null;
-  let readyPromise = null;
-
-  async function getSql() {
-    if (sql) return sql;
-    if (!connectionString) {
-      throw new Error("createNeonAuthStore requires a database URL");
-    }
-    const { neon } = await import("@neondatabase/serverless");
-    const client = neon(connectionString, { fullResults: true });
-    sql = {
-      async query(text, params = []) {
-        const result = await client.query(text, params);
-        if (result && Array.isArray(result.rows)) return result;
-        if (Array.isArray(result)) return { rows: result };
-        return { rows: [] };
-      },
-    };
-    return sql;
-  }
-
-  async function ready() {
-    if (!readyPromise) {
-      readyPromise = (async () => {
-        const client = await getSql();
-        await client.query(
-          `SELECT token_hash, expires_at
-           FROM solforge_auth_sessions
-           LIMIT 0`,
-        );
-      })();
-    }
-    return readyPromise;
-  }
-
-  async function create() {
-    await ready();
-    const client = await getSql();
-    const session = newSession(ttlMs);
-    await client.query(
-      `INSERT INTO solforge_auth_sessions (token_hash, expires_at)
-       VALUES ($1, to_timestamp($2 / 1000.0))`,
-      [session.tokenHash, session.expiresAt],
-    );
-    // best-effort prune of expired rows
-    void client
-      .query(`DELETE FROM solforge_auth_sessions WHERE expires_at < now()`)
-      .catch(() => {});
-    return session;
-  }
-
-  async function get(token) {
-    await ready();
-    const tokenHash = hashSessionToken(token);
-    if (!tokenHash) return { authenticated: false };
-    const client = await getSql();
-    const result = await client.query(
-      `SELECT expires_at
-       FROM solforge_auth_sessions
-       WHERE token_hash = $1 AND expires_at > now()`,
-      [tokenHash],
-    );
-    const row = result?.rows?.[0];
-    if (!row) return { authenticated: false };
-    return {
-      authenticated: true,
-      expiresAt: new Date(row.expires_at).getTime(),
-      binding: tokenHash,
-    };
-  }
-
-  async function destroy(token) {
-    await ready();
-    const tokenHash = hashSessionToken(token);
-    if (!tokenHash) return false;
-    const client = await getSql();
-    const result = await client.query(
-      `DELETE FROM solforge_auth_sessions
-       WHERE token_hash = $1
-       RETURNING token_hash`,
-      [tokenHash],
-    );
-    return (result?.rows?.length ?? 0) === 1;
-  }
-
-  return {
-    ready,
-    create,
-    get,
-    destroy,
-    ttlMs,
-    backend: "neon",
-    multiInstanceSafe: true,
-  };
-}
-
 export function createUpstashAuthStore(options = {}) {
   const ttlMs = options.ttlMs ?? DEFAULT_AUTH_TTL_MS;
   const ttlSec = Math.max(1, Math.ceil(ttlMs / 1000));
@@ -282,27 +178,23 @@ export function createAuthStoreFromEnv(options = {}) {
   const env = options.env ?? process.env;
   if (env.NODE_ENV === "test") return createAuthStore(options);
 
-  const neonUrl =
-    env.SOLFORGE_DATABASE_URL || env.DATABASE_URL || env.NEON_DATABASE_URL || "";
-  if (neonUrl) {
-    return createNeonAuthStore({ ...options, connectionString: neonUrl });
-  }
-
   const upstashUrl = env.UPSTASH_REDIS_REST_URL ?? "";
   const upstashToken = env.UPSTASH_REDIS_REST_TOKEN ?? "";
-  if (upstashUrl || upstashToken) {
-    if (!upstashUrl || !upstashToken) {
+  if (!upstashUrl || !upstashToken) {
+    if (env.NODE_ENV === "production" || env.VERCEL === "1") {
+      throw new Error(
+        "Production requires Upstash Redis for authentication sessions",
+      );
+    }
+    if (upstashUrl || upstashToken) {
       throw new Error("Incomplete Upstash Redis credentials");
     }
-    return createUpstashAuthStore({
-      ...options,
-      url: upstashUrl,
-      token: upstashToken,
-    });
+    return createAuthStore(options);
   }
 
-  if (env.NODE_ENV === "production" || env.VERCEL === "1") {
-    throw new Error("Production requires a durable authentication session store");
-  }
-  return createAuthStore(options);
+  return createUpstashAuthStore({
+    ...options,
+    url: upstashUrl,
+    token: upstashToken,
+  });
 }
