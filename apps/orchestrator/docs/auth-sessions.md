@@ -1,33 +1,32 @@
-# Durable authentication sessions
+# Durable authentication and approval sessions
 
-## Owner-run database preparation
+## Production backend policy
 
-The application performs read-only schema readiness checks at startup. It does
-not create or alter tables. Before releasing this code with Neon, a database
-owner must review and apply:
+Production and Vercel use Upstash Redis REST for all stateful security paths:
+
+- authentication sessions
+- one-time approval sessions
+- distributed login rate limiting
+
+Set both private runtime variables:
 
 ```text
-migrations/001_auth_sessions_and_approval_context.sql
+UPSTASH_REDIS_REST_URL
+UPSTASH_REDIS_REST_TOKEN
 ```
 
-Apply it first to an isolated branch or staging database, verify the four
-approval columns and `solforge_auth_sessions` table, then start the application.
-Do not apply the migration as part of ordinary application startup. No database
-migration was run as part of this change.
+Production startup fails closed when either value is missing, incomplete, or
+unreachable. Database URL variables are not session-store selectors.
 
-Startup fails closed if production has no durable credentials or if the selected
-store cannot read its required table and columns. Neon is preferred when a
-database URL is configured. Atomic Upstash REST operations are the fallback when
-both Upstash variables are configured. In-memory stores are test/development
-only, are not multi-instance safe, and lose sessions on restart; `/health`
-reports the selected stores and restart behavior.
+`/health` must report:
 
-Production login retries use an atomic Upstash Redis fixed window shared across
-instances. The default is five attempts per five minutes for each trusted client
-IP. `LOGIN_RATE_MAX` and `LOGIN_RATE_WINDOW_MS` may tune those values. Production
-startup fails closed when the Upstash credentials required by this limiter are
-missing or incomplete. Development retains an explicit process-local fallback.
-`/health` reports the limiter backend, scope, and multi-instance safety.
+```text
+approvalStore: upstash-redis
+authStore: upstash-redis
+loginRateLimitBackend: upstash-redis
+loginRateLimitScope: distributed
+productionReadyClaim: true
+```
 
 ## Browser and CSRF boundary
 
@@ -35,33 +34,24 @@ Authentication and approval use distinct HttpOnly, `SameSite=Strict`, `Path=/`
 cookies. Cookies are `Secure` in production, on Vercel, or when
 `FORCE_SECURE_COOKIES=true`. Cookie clearing uses the same attributes.
 
-Every state-changing route below requires `x-solforge-csrf: 1`:
-
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `POST /api/plan`
-- `POST /api/mission/analyze`
-- `POST /api/approve`
-- `POST /api/build-preview`
-- `POST /api/package`
-
-The custom header is a browser cross-site request barrier, not a secret and not
-a substitute for authentication. Solforge does not enable permissive CORS that
-would allow arbitrary origins to send it. `SameSite=Strict` and the header do
-not protect against same-origin XSS; model-controlled output must continue to be
-rendered through DOM nodes and `textContent`.
+Every state-changing route requires `x-solforge-csrf: 1`. The header is a
+browser cross-site request barrier, not a secret or substitute for authentication.
+Solforge does not enable permissive CORS. Same-origin XSS remains a separate
+boundary; model-controlled output must continue to use DOM nodes and
+`textContent`.
 
 ## Session behavior
 
 Login accepts the private access code once and issues an opaque bearer cookie.
 Only its SHA-256 lookup value is stored. Successful login replaces an existing
-valid browser session. Status reads do not extend the absolute expiry. Logout
-invalidates server state before clearing cookies.
+valid browser session. Reads do not extend absolute expiry. Logout invalidates
+server state before clearing cookies.
 
-Approval records are separate and bind the authenticated session, canonical plan
-digest, nonce, expiry, operation, opaque artifact context, and optional parent
-version digest. Consumption is one-time and atomic in durable stores.
+Approval records bind the authenticated session, canonical plan digest, nonce,
+expiry, operation, opaque artifact context, and optional parent version digest.
+Consumption is one-time and atomic through Redis `GETDEL`.
 
-Operational rollback is to restore the previous application revision. The
-additive table and nullable columns may remain unused; dropping them is a
-separate owner-reviewed database change.
+## Rollback
+
+Restore the previous application revision and its matching environment policy.
+Do not manually delete Redis keys; TTL expiry handles stale sessions.

@@ -6,7 +6,6 @@ import {
   clearSessionCookie,
   createApprovalStore,
   createApprovalStoreFromEnv,
-  createNeonApprovalStore,
   createUpstashApprovalStore,
   parseCookies,
   planDigest,
@@ -161,26 +160,39 @@ describe("durable approval stores", () => {
     assert.match(calls[0], /\/getdel\//);
   });
 
-  it("checks Neon approval columns with read-only startup SQL", async () => {
-    const queries = [];
-    const store = createNeonApprovalStore({
-      sql: {
-        async query(text) {
-          queries.push(text);
-          return { rows: [] };
-        },
+  it("selects Upstash in production even when stale Neon variables exist", () => {
+    const store = createApprovalStoreFromEnv({
+      env: {
+        NODE_ENV: "production",
+        SOLFORGE_DATABASE_URL: "postgresql://ignored.invalid/db",
+        UPSTASH_REDIS_REST_URL: "https://example.invalid",
+        UPSTASH_REDIS_REST_TOKEN: "test-only",
       },
+      fetchImpl: async () => ({
+        ok: true,
+        json: async () => ({ result: "PONG" }),
+      }),
     });
-    await store.ready();
-    assert.equal(queries.length, 1);
-    assert.match(queries[0], /artifact_context_id/i);
-    assert.doesNotMatch(queries[0], /\b(CREATE|ALTER|DROP)\b/i);
+    assert.equal(store.backend, "upstash-redis");
   });
 
-  it("fails closed in production without a durable store", () => {
+  it("rejects Neon-only production configuration", () => {
+    assert.throws(
+      () =>
+        createApprovalStoreFromEnv({
+          env: {
+            NODE_ENV: "production",
+            SOLFORGE_DATABASE_URL: "postgresql://ignored.invalid/db",
+          },
+        }),
+      /requires Upstash Redis/i,
+    );
+  });
+
+  it("fails closed in production without Upstash credentials", () => {
     assert.throws(
       () => createApprovalStoreFromEnv({ env: { NODE_ENV: "production" } }),
-      /durable approval session store/i,
+      /requires Upstash Redis/i,
     );
   });
 });
