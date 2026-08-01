@@ -1,9 +1,13 @@
 name: Sync certified merged-main export
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/sync-certified-merged-main
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 permissions:
   contents: write
@@ -14,19 +18,21 @@ concurrency:
 
 jobs:
   sync:
+    if: github.event.pull_request.head.ref == 'agent/sync-certified-merged-main'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Check out public target branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          ref: agent/sync-certified-merged-main
           fetch-depth: 0
           persist-credentials: true
 
       - name: Download and verify certified artifact
         shell: bash
         env:
-          CERTIFICATION_URL: 'https://sdmntprwestus3.oaiusercontent.com/files/00000000-fff8-81fd-a157-804025d199cc/raw?se=2026-08-01T23:41:54Z&sp=r&sv=2026-02-06&sr=b&scid=cf2b915e-cdd6-5729-912b-1851dddcd8c0&skoid=2d2fbb03-9efb-4ad0-a91c-1db2f5a47997&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-01T14:59:12Z&ske=2026-08-02T14:59:12Z&sks=b&skv=2026-02-06&sig=UYw6E5T4R55j1%2BtS4/A4vTua6dIIpxVfUNaXuy4aE7c%3D'
+          CERTIFICATION_URL: 'https://sdmntprwestus3.oaiusercontent.com/files/00000000-ba3c-81fd-b09b-e2a698eaa920/raw?se=2026-08-01T23:43:05Z&sp=r&sv=2026-02-06&sr=b&scid=e682a805-6636-55c4-bc44-a36a2f0021b7&skoid=2d2fbb03-9efb-4ad0-a91c-1db2f5a47997&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-01T01:28:59Z&ske=2026-08-02T01:28:59Z&sks=b&skv=2026-02-06&sig=CV42gmoljC7INu0918ymtMfaLkH58SgXbCQVLKUbU68%3D'
           CERTIFICATION_ZIP_SHA256: 0e5d32878bb086fdd5d2caf8919160d4ad6237b80d886d612e1a795b050f8ee9
           CANDIDATE_ARCHIVE_SHA256: d54180b0416dab403407042eae956125a372889c57f436e5896e1fee7e68320a
         run: |
