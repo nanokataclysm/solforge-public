@@ -32,9 +32,9 @@ jobs:
       - name: Download and verify certified artifact
         shell: bash
         env:
-          CERTIFICATION_URL: 'https://sdmntprwestus3.oaiusercontent.com/files/00000000-ba3c-81fd-b09b-e2a698eaa920/raw?se=2026-08-01T23:43:05Z&sp=r&sv=2026-02-06&sr=b&scid=e682a805-6636-55c4-bc44-a36a2f0021b7&skoid=2d2fbb03-9efb-4ad0-a91c-1db2f5a47997&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-01T01:28:59Z&ske=2026-08-02T01:28:59Z&sks=b&skv=2026-02-06&sig=CV42gmoljC7INu0918ymtMfaLkH58SgXbCQVLKUbU68%3D'
-          CERTIFICATION_ZIP_SHA256: 0e5d32878bb086fdd5d2caf8919160d4ad6237b80d886d612e1a795b050f8ee9
-          CANDIDATE_ARCHIVE_SHA256: d54180b0416dab403407042eae956125a372889c57f436e5896e1fee7e68320a
+          CERTIFICATION_URL: 'https://sdmntprwestus3.oaiusercontent.com/files/00000000-b778-81fd-90eb-4702baf8c0cb/raw?se=2026-08-01T23:48:14Z&sp=r&sv=2026-02-06&sr=b&scid=89749ab9-0d60-5c27-81fe-d3a57f888988&skoid=2d2fbb03-9efb-4ad0-a91c-1db2f5a47997&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-01T16:59:42Z&ske=2026-08-02T16:59:42Z&sks=b&skv=2026-02-06&sig=mKd%2BDhHeqAu6Q1BTieOxo9DKh6Mqntm07QakIBls5EU%3D'
+          CERTIFICATION_ZIP_SHA256: efa28ddc595d7a43d59d397491326273478c542c61f295dd868d09b2731bff71
+          CANDIDATE_ARCHIVE_SHA256: d68e3ae8c2316cc142a3cc000a5ab7006e897366acca49e0eed64d23a7b9bef2
         run: |
           set -euo pipefail
           curl -fsSL --retry 3 --retry-delay 1 "$CERTIFICATION_URL" -o /tmp/certification.zip
