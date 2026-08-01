@@ -80,7 +80,14 @@ jobs:
           assert report["repositoryCreated"] is False
           assert report["repositorySettingsChanged"] is False
           assert report["includedFileCount"] == len(exported)
-          assert report["excludedPrivateFileCount"] > 0
+          classification_counts = report["classificationCounts"]
+          exported_target = classification_counts == {
+              "public-include": report["includedFileCount"]
+          }
+          if exported_target:
+              assert report["excludedPrivateFileCount"] == 0
+          else:
+              assert report["excludedPrivateFileCount"] > 0
           assert hashlib.sha256(archive_path.read_bytes()).hexdigest() == report["archiveSha256"]
           assert not any(path.startswith(private_prefixes) for path in exported)
           assert "AGENTS.md" not in exported
@@ -118,6 +125,7 @@ jobs:
           git config user.name "Public Candidate Audit"
           git config user.email "candidate@example.com"
           git add -A
+          git diff --cached --check
           GIT_AUTHOR_DATE="1970-01-01T00:00:00Z" \
           GIT_COMMITTER_DATE="1970-01-01T00:00:00Z" \
             git commit -qm "history-free candidate"
