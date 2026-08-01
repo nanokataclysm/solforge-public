@@ -1,0 +1,63 @@
+name: Sync certified merged-main export
+
+on:
+  push:
+    branches:
+      - agent/sync-certified-merged-main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-certified-merged-main
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out public target branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Download and verify certified artifact
+        shell: bash
+        env:
+          CERTIFICATION_URL: 'https://sdmntprwestus3.oaiusercontent.com/files/00000000-fff8-81fd-a157-804025d199cc/raw?se=2026-08-01T23:41:54Z&sp=r&sv=2026-02-06&sr=b&scid=cf2b915e-cdd6-5729-912b-1851dddcd8c0&skoid=2d2fbb03-9efb-4ad0-a91c-1db2f5a47997&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-01T14:59:12Z&ske=2026-08-02T14:59:12Z&sks=b&skv=2026-02-06&sig=UYw6E5T4R55j1%2BtS4/A4vTua6dIIpxVfUNaXuy4aE7c%3D'
+          CERTIFICATION_ZIP_SHA256: 0e5d32878bb086fdd5d2caf8919160d4ad6237b80d886d612e1a795b050f8ee9
+          CANDIDATE_ARCHIVE_SHA256: d54180b0416dab403407042eae956125a372889c57f436e5896e1fee7e68320a
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 --retry-delay 1 "$CERTIFICATION_URL" -o /tmp/certification.zip
+          echo "$CERTIFICATION_ZIP_SHA256  /tmp/certification.zip" | sha256sum -c -
+          unzip -q /tmp/certification.zip public-candidate.tar.gz -d /tmp/certification
+          echo "$CANDIDATE_ARCHIVE_SHA256  /tmp/certification/public-candidate.tar.gz" | sha256sum -c -
+
+      - name: Replace branch tree with certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/candidate
+          tar -xzf /tmp/certification/public-candidate.tar.gz \
+            --strip-components=1 \
+            -C /tmp/candidate
+
+          test "$(find /tmp/candidate -type f | wc -l)" -eq 103
+          test -f /tmp/candidate/README.md
+          test -f /tmp/candidate/LICENSE
+          test ! -e /tmp/candidate/evidence
+          test ! -e /tmp/candidate/docs/handoffs
+          test ! -e /tmp/candidate/.github/workflows/sync-certified-export.yml
+
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/candidate/. .
+
+          git config user.name "Solforge Certified Export"
+          git config user.email "candidate@example.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Sync certified merged-main public export"
+          git push origin HEAD:agent/sync-certified-merged-main
