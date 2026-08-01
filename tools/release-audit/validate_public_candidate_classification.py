@@ -64,11 +64,6 @@ def main() -> int:
     source_base = manifest.get("sourceBase")
     if not isinstance(source_base, str):
         errors.append("source_base_missing")
-    else:
-        try:
-            git("cat-file", "-e", f"{source_base}^{{commit}}")
-        except subprocess.CalledProcessError:
-            errors.append("source_base_not_reachable")
 
     rules = manifest.get("rules", [])
     if not isinstance(rules, list) or not rules:
@@ -112,6 +107,23 @@ def main() -> int:
         else:
             classifications[path] = rule
 
+    counts = Counter(rule["disposition"] for rule in classifications.values())
+    exported_target = (
+        bool(tracked)
+        and len(classifications) == len(tracked)
+        and counts == Counter({"public-include": len(tracked)})
+    )
+    validation_mode = "exported-target" if exported_target else "source"
+
+    source_base_reachable = False
+    if isinstance(source_base, str):
+        try:
+            git("cat-file", "-e", f"{source_base}^{{commit}}")
+            source_base_reachable = True
+        except subprocess.CalledProcessError:
+            if not exported_target:
+                errors.append("source_base_not_reachable")
+
     coverage = manifest.get("auditCoverage", {})
     privacy_paths = set(coverage.get("privacySensitivePaths", []))
     media_paths = set(coverage.get("mediaPaths", []))
@@ -134,7 +146,8 @@ def main() -> int:
 
     for path in sorted(media_paths):
         if path not in tracked_set:
-            errors.append(f"media_path_missing:{path}")
+            if not exported_target:
+                errors.append(f"media_path_missing:{path}")
             continue
         rule = classifications.get(path)
         if rule is not None and rule["disposition"] != "private-source-only":
@@ -144,7 +157,6 @@ def main() -> int:
         if path.startswith("evidence/") and rule["disposition"] != "private-source-only":
             errors.append(f"evidence_not_private:{path}")
 
-    counts = Counter(rule["disposition"] for rule in classifications.values())
     manual_review_paths = sorted(
         path
         for path, rule in classifications.items()
@@ -171,14 +183,16 @@ def main() -> int:
 
     result = {
         "ok": not errors,
+        "validationMode": validation_mode,
         "sourceBase": source_base,
+        "sourceBaseReachable": source_base_reachable,
         "trackedFiles": len(tracked),
         "classificationCounts": dict(sorted(counts.items())),
         "manualReviewPaths": manual_review_paths,
         "rewriteBeforeIncludePaths": rewrite_before_include_paths,
         "packageLicense": package.get("license"),
         "packageLockLicense": package_lock.get("packages", {}).get("", {}).get("license"),
-        "rootLicense": "MIT" if not errors or "root_license_not_mit" not in errors else "unexpected",
+        "rootLicense": "MIT" if "root_license_not_mit" not in errors else "unexpected",
         "privacySensitivePathsCovered": len(privacy_paths),
         "historicalOnlyPrivacyPaths": historical_only_privacy_paths,
         "mediaPathsCovered": len(media_paths),
