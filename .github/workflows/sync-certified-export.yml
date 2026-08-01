@@ -32,7 +32,7 @@ jobs:
       - name: Download and verify certified artifact
         shell: bash
         env:
-          CERTIFICATION_URL: 'https://sdmntprwestus3.oaiusercontent.com/files/00000000-b778-81fd-90eb-4702baf8c0cb/raw?se=2026-08-01T23:48:14Z&sp=r&sv=2026-02-06&sr=b&scid=89749ab9-0d60-5c27-81fe-d3a57f888988&skoid=2d2fbb03-9efb-4ad0-a91c-1db2f5a47997&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-01T16:59:42Z&ske=2026-08-02T16:59:42Z&sks=b&skv=2026-02-06&sig=mKd%2BDhHeqAu6Q1BTieOxo9DKh6Mqntm07QakIBls5EU%3D'
+          CERTIFICATION_URL: 'https://sdmntprwestus3.oaiusercontent.com/files/00000000-e978-81fd-bd27-2a5950f417ad/raw?se=2026-08-01T23:50:30Z&sp=r&sv=2026-02-06&sr=b&scid=4b9c200a-50cc-5339-b859-f92c383c590c&skoid=2d2fbb03-9efb-4ad0-a91c-1db2f5a47997&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-01T01:19:13Z&ske=2026-08-02T01:19:13Z&sks=b&skv=2026-02-06&sig=ALYg5A3rqwnNlp4pipL4Nhgl9pR7Qj3Ua4F8vBPtjVQ%3D'
           CERTIFICATION_ZIP_SHA256: efa28ddc595d7a43d59d397491326273478c542c61f295dd868d09b2731bff71
           CANDIDATE_ARCHIVE_SHA256: d68e3ae8c2316cc142a3cc000a5ab7006e897366acca49e0eed64d23a7b9bef2
         run: |
@@ -42,11 +42,11 @@ jobs:
           unzip -q /tmp/certification.zip public-candidate.tar.gz -d /tmp/certification
           echo "$CANDIDATE_ARCHIVE_SHA256  /tmp/certification/public-candidate.tar.gz" | sha256sum -c -
 
-      - name: Replace branch tree with certified candidate
+      - name: Replace non-workflow tree with certified candidate
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/candidate
+          mkdir -p /tmp/candidate /tmp/existing-workflows
           tar -xzf /tmp/certification/public-candidate.tar.gz \
             --strip-components=1 \
             -C /tmp/candidate
@@ -58,12 +58,16 @@ jobs:
           test ! -e /tmp/candidate/docs/handoffs
           test ! -e /tmp/candidate/.github/workflows/sync-certified-export.yml
 
+          cp -a .github/workflows/. /tmp/existing-workflows/
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp -a /tmp/candidate/. .
+          rm -rf .github/workflows
+          mkdir -p .github/workflows
+          cp -a /tmp/existing-workflows/. .github/workflows/
 
           git config user.name "Solforge Certified Export"
           git config user.email "candidate@example.com"
           git add -A
           git diff --cached --check
-          git commit -m "Sync certified merged-main public export"
+          git commit -m "Sync certified merged-main public export content"
           git push origin HEAD:agent/sync-certified-merged-main
