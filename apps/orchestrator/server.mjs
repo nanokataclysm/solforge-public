@@ -29,6 +29,9 @@ import {
   createAuthStore,
   createAuthStoreFromEnv,
 } from "./lib/auth-session.mjs";
+import { forgeVerifiedMediaPackage } from "./lib/verified-media-package-forge.mjs";
+import { verifiedMediaPackageIntentDigest } from "./lib/verified-media-package-intent.mjs";
+import { createB2GetFileInfoFromEnv } from "./lib/b2-get-file-info-adapter.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -55,8 +58,36 @@ const PLAN_SYSTEM = [
 
 const LEGACY_AUTH_HEADER = "x-nanokat-demo-token";
 const STATE_CHANGE_HEADER = "x-solforge-csrf";
-const APPROVAL_OPERATIONS = new Set(["build-preview", "package"]);
+const APPROVAL_OPERATIONS = new Set(["build-preview", "package", "media-package"]);
 const TRUST_PROXY_HOPS_ENV = "SOLFORGE_TRUST_PROXY_HOPS";
+const MEDIA_PACKAGE_CONFLICT_CODES = new Set([
+  "b2_action_mismatch",
+  "b2_file_id_mismatch",
+  "b2_object_key_mismatch",
+  "b2_size_mismatch",
+  "b2_content_type_mismatch",
+  "b2_sha256_mismatch",
+]);
+const MEDIA_PACKAGE_INPUT_CODES = new Set([
+  "invalid_options",
+  "invalid_assets",
+  "invalid_references",
+  "unexpected_reference",
+  "missing_reference",
+]);
+
+function mediaPackageFailureStatus(result) {
+  if (result?.stage === "signing") return 500;
+  if (
+    result?.code === "b2_lookup_failed" ||
+    result?.code === "invalid_b2_response"
+  ) {
+    return 502;
+  }
+  if (MEDIA_PACKAGE_CONFLICT_CODES.has(result?.code)) return 409;
+  if (MEDIA_PACKAGE_INPUT_CODES.has(result?.code)) return 400;
+  return 500;
+}
 
 /**
  * Trust Vercel's single overwritten forwarding hop. Other proxy topologies
@@ -97,6 +128,9 @@ export function rateLimitKey(scope, request) {
  *   loginRateLimiter?: ReturnType<typeof createRateLimiter>,
  *   societyModels?: { navigator: string, specialist: string, chair: string },
  *   roleTimeoutMs?: number,
+ *   mediaGetFileInfo?: (request: { fileId: string }) => Promise<unknown>,
+ *   mediaPrivateKeyLoader?: () => Promise<string>,
+ *   mediaPublicKeyLoader?: () => Promise<string>,
  * }} [options]
  */
 export async function createApp(options = {}) {
@@ -143,6 +177,17 @@ export async function createApp(options = {}) {
   );
   const multiInstanceSafe =
     sessionStoresMultiInstanceSafe && loginRateLimitMultiInstanceSafe;
+  const mediaGetFileInfo = Object.hasOwn(options, "mediaGetFileInfo")
+    ? options.mediaGetFileInfo
+    : createB2GetFileInfoFromEnv();
+  const mediaPrivateKeyLoader =
+    options.mediaPrivateKeyLoader ?? loadPrivateKey;
+  const mediaPublicKeyLoader =
+    options.mediaPublicKeyLoader ?? loadPublicKey;
+  const mediaPackageAvailable =
+    typeof mediaGetFileInfo === "function" &&
+    typeof mediaPrivateKeyLoader === "function" &&
+    typeof mediaPublicKeyLoader === "function";
 
   const qwen =
     options.qwen ??
@@ -229,12 +274,19 @@ export async function createApp(options = {}) {
     return true;
   }
 
-  function approvalBinding(request, operation, artifactContextId, parentVersionDigest) {
+  function approvalBinding(
+    request,
+    operation,
+    artifactContextId,
+    parentVersionDigest,
+    operationContextDigest = null,
+  ) {
     return {
       authSessionHash: request.authSession.binding,
       operation,
       artifactContextId,
       parentVersionDigest: parentVersionDigest ?? null,
+      operationContextDigest,
     };
   }
 
@@ -613,12 +665,52 @@ export async function createApp(options = {}) {
         error: "A valid artifact context identifier is required",
       });
     }
-    const parentVersionDigest = parentVersionDigestFrom(
+    let parentVersionDigest = parentVersionDigestFrom(
       request.body?.parentVersionDigest,
     );
-    if (
-      parentVersionDigest === undefined ||
-      (operation === "build-preview" && parentVersionDigest !== null)
+    let operationContextDigest = null;
+    if (parentVersionDigest === undefined) {
+      return response.status(400).json({
+        ok: false,
+        error: "Invalid parent version context",
+      });
+    }
+
+    if (operation === "media-package") {
+      if (!mediaPackageAvailable) {
+        return response.status(503).json({
+          ok: false,
+          error: "Verified media package service unavailable",
+        });
+      }
+
+      const mediaIntent = verifiedMediaPackageIntentDigest(
+        request.body?.mediaIntent,
+      );
+      if (!mediaIntent.ok) {
+        return response.status(400).json({
+          ok: false,
+          error: "Invalid verified media package intent",
+          code: mediaIntent.code,
+        });
+      }
+
+      const intentParentVersionDigest =
+        mediaIntent.intent.parentVersionDigest ?? null;
+      if (
+        parentVersionDigest !== null &&
+        parentVersionDigest !== intentParentVersionDigest
+      ) {
+        return response.status(400).json({
+          ok: false,
+          error: "Invalid parent version context",
+        });
+      }
+      parentVersionDigest = intentParentVersionDigest;
+      operationContextDigest = mediaIntent.digest;
+    } else if (
+      operation === "build-preview" &&
+      parentVersionDigest !== null
     ) {
       return response.status(400).json({
         ok: false,
@@ -635,6 +727,7 @@ export async function createApp(options = {}) {
             operation,
             artifactContextId,
             parentVersionDigest,
+            operationContextDigest,
           ),
         ),
       );
@@ -655,6 +748,9 @@ export async function createApp(options = {}) {
         operation,
         artifactContextId,
         parentVersionDigest,
+        ...(operationContextDigest
+          ? { mediaIntentDigest: operationContextDigest }
+          : {}),
         expiresAt: new Date(session.expiresAt).toISOString(),
         approvalGate: "session-bound",
         approvalStore: approvalBackend,
@@ -872,6 +968,151 @@ export async function createApp(options = {}) {
         error: "Package signing failed",
       });
     }
+  });
+
+
+  app.post("/api/media/package", async (request, response) => {
+    if (!(await requireAuth(request, response))) return;
+
+    if (!mediaPackageAvailable) {
+      return response.status(503).json({
+        ok: false,
+        error: "Verified media package service unavailable",
+      });
+    }
+
+    const checked = validatePlan(request.body?.plan);
+    if (!checked.ok) {
+      return response.status(checked.status).json({
+        ok: false,
+        error: checked.error,
+        details: checked.details,
+      });
+    }
+
+    const mediaIntent = verifiedMediaPackageIntentDigest(
+      request.body?.mediaIntent,
+    );
+    if (!mediaIntent.ok) {
+      return response.status(400).json({
+        ok: false,
+        error: "Invalid verified media package intent",
+        code: mediaIntent.code,
+      });
+    }
+
+    const nonce =
+      typeof request.body?.nonce === "string"
+        ? request.body.nonce
+        : undefined;
+    const artifactContextId = artifactContextIdFrom(
+      request.body?.artifactContextId,
+    );
+    if (!artifactContextId) {
+      return response.status(400).json({
+        ok: false,
+        error: "A valid artifact context identifier is required",
+      });
+    }
+
+    const parentVersionDigest =
+      mediaIntent.intent.parentVersionDigest ?? null;
+    const cookies = parseCookies(request.get("cookie") ?? "");
+    const sessionId = cookies[COOKIE_NAME];
+
+    let gate;
+    try {
+      gate = await Promise.resolve(
+        approvalStore.consume({
+          sessionId,
+          plan: checked.plan,
+          nonce,
+          ...approvalBinding(
+            request,
+            "media-package",
+            artifactContextId,
+            parentVersionDigest,
+            mediaIntent.digest,
+          ),
+        }),
+      );
+    } catch (error) {
+      console.error("approval_consume_failed", {
+        message: error instanceof Error ? error.message : "unknown",
+      });
+      return response.status(503).json({
+        ok: false,
+        error: "Approval session store unavailable",
+      });
+    }
+    if (!gate.ok) {
+      return response.status(gate.status).json({
+        ok: false,
+        error: gate.error,
+      });
+    }
+
+    response.setHeader(
+      "Set-Cookie",
+      clearSessionCookie(COOKIE_NAME, secureCookies),
+    );
+
+    let forged;
+    try {
+      const [privateKeyPem, publicKeyPem] = await Promise.all([
+        mediaPrivateKeyLoader(),
+        mediaPublicKeyLoader(),
+      ]);
+      forged = await forgeVerifiedMediaPackage({
+        ...mediaIntent.intent,
+        getFileInfo: mediaGetFileInfo,
+        privateKeyPem,
+        publicKeyPem,
+      });
+    } catch (error) {
+      console.error("verified_media_package_failed", {
+        stage: "signing",
+        code: "signing_failed",
+      });
+      return response.status(500).json({
+        ok: false,
+        error: "Verified media package signing failed",
+        stage: "signing",
+        code: "signing_failed",
+      });
+    }
+
+    if (!forged.ok) {
+      const status = mediaPackageFailureStatus(forged);
+      console.warn("verified_media_package_failed", {
+        stage: forged.stage,
+        code: forged.code,
+      });
+      return response.status(status).json({
+        ok: false,
+        error:
+          forged.stage === "stored_asset_verification"
+            ? "Stored media verification failed"
+            : "Verified media package signing failed",
+        stage: forged.stage,
+        code: forged.code,
+      });
+    }
+
+    return response.json({
+      ok: true,
+      planDigest: gate.planDigest,
+      mediaIntentDigest: mediaIntent.digest,
+      verifiedAssetCount: forged.verifiedAssets.length,
+      receipt: forged.package.receipt,
+      receiptDigest: forged.package.receiptDigest,
+      signature: forged.package.signature,
+      publicKeyFingerprint: forged.package.publicKeyFingerprint,
+      signingAlgorithm: "Ed25519",
+      issuer: forged.package.receipt.issuer,
+      packageFormat: "verified-media-json-v1",
+      warning: "Development signing identity only - not production key custody",
+    });
   });
 
   app.get("/api/signing/public-key", async (_request, response) => {

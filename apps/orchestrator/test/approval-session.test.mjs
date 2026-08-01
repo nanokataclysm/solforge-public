@@ -6,7 +6,6 @@ import {
   clearSessionCookie,
   createApprovalStore,
   createApprovalStoreFromEnv,
-  createNeonApprovalStore,
   createUpstashApprovalStore,
   parseCookies,
   planDigest,
@@ -22,6 +21,7 @@ const binding = {
   operation: "build-preview",
   artifactContextId: "b".repeat(32),
   parentVersionDigest: null,
+  operationContextDigest: null,
 };
 
 describe("planDigest", () => {
@@ -92,6 +92,34 @@ describe("in-memory approval store", () => {
     assert.match(replay.error, /missing or expired|already used/i);
   });
 
+  it("binds an optional operation-context digest", () => {
+    const operationContextDigest = "e".repeat(64);
+    const contextualBinding = { ...binding, operationContextDigest };
+    const store = createApprovalStore();
+    const created = store.create(plan, contextualBinding);
+    assert.equal(created.operationContextDigest, operationContextDigest);
+
+    const accepted = store.consume({
+      sessionId: created.sessionId,
+      plan,
+      nonce: created.nonce,
+      ...contextualBinding,
+    });
+    assert.equal(accepted.ok, true);
+
+    const mismatchStore = createApprovalStore();
+    const mismatch = mismatchStore.create(plan, contextualBinding);
+    const rejected = mismatchStore.consume({
+      sessionId: mismatch.sessionId,
+      plan,
+      nonce: mismatch.nonce,
+      ...contextualBinding,
+      operationContextDigest: "f".repeat(64),
+    });
+    assert.equal(rejected.status, 409);
+    assert.match(rejected.error, /context/i);
+  });
+
   it("rejects changed plans, nonces, auth sessions, operations, artifacts, and parents", () => {
     const changes = [
       { plan: { ...plan, businessName: "Tampered" }, error: /digest/i },
@@ -100,6 +128,7 @@ describe("in-memory approval store", () => {
       { operation: "package", error: /context/i },
       { artifactContextId: "d".repeat(32), error: /context/i },
       { parentVersionDigest: "different-parent", error: /context/i },
+      { operationContextDigest: "e".repeat(64), error: /context/i },
     ];
 
     for (const change of changes) {
@@ -161,26 +190,39 @@ describe("durable approval stores", () => {
     assert.match(calls[0], /\/getdel\//);
   });
 
-  it("checks Neon approval columns with read-only startup SQL", async () => {
-    const queries = [];
-    const store = createNeonApprovalStore({
-      sql: {
-        async query(text) {
-          queries.push(text);
-          return { rows: [] };
-        },
+  it("selects Upstash in production even when stale Neon variables exist", () => {
+    const store = createApprovalStoreFromEnv({
+      env: {
+        NODE_ENV: "production",
+        SOLFORGE_DATABASE_URL: "postgresql://ignored.invalid/db",
+        UPSTASH_REDIS_REST_URL: "https://example.invalid",
+        UPSTASH_REDIS_REST_TOKEN: "test-only",
       },
+      fetchImpl: async () => ({
+        ok: true,
+        json: async () => ({ result: "PONG" }),
+      }),
     });
-    await store.ready();
-    assert.equal(queries.length, 1);
-    assert.match(queries[0], /artifact_context_id/i);
-    assert.doesNotMatch(queries[0], /\b(CREATE|ALTER|DROP)\b/i);
+    assert.equal(store.backend, "upstash-redis");
   });
 
-  it("fails closed in production without a durable store", () => {
+  it("rejects Neon-only production configuration", () => {
+    assert.throws(
+      () =>
+        createApprovalStoreFromEnv({
+          env: {
+            NODE_ENV: "production",
+            SOLFORGE_DATABASE_URL: "postgresql://ignored.invalid/db",
+          },
+        }),
+      /requires Upstash Redis/i,
+    );
+  });
+
+  it("fails closed in production without Upstash credentials", () => {
     assert.throws(
       () => createApprovalStoreFromEnv({ env: { NODE_ENV: "production" } }),
-      /durable approval session store/i,
+      /requires Upstash Redis/i,
     );
   });
 });

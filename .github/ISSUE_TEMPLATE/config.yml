@@ -1,8 +1,2 @@
 blank_issues_enabled: false
-contact_links:
-  - name: Public alpha demo
-    url: https://solforge.nanokat.com
-    about: Try plan → approve → preview. Demo access code is operator-held (not in git).
-  - name: NANOKAT monorepo (separate product surface)
-    url: https://github.com/nanokataclysm/nanokat
-    about: dash.nanokat.com hub, clients, Alley — not this Forge unit unless linked intentionally
+contact_links: []

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "sourceRepository": "nanokataclysm/solforge",
+  "sourceBase": "47ef73970dd797a7d65925a4fe2b88c97304769b",
+  "publicationStrategy": {
+    "mode": "history-free-clean-export",
+    "sourceRepositoryRemainsPrivate": true,
+    "targetRepository": null,
+    "authorizationRequiredBeforeTargetCreation": true,
+    "reason": "The private source history contains operator, transcript, evidence, and media material. A clean allowlisted export avoids publishing or rewriting that history."
+  },
+  "allowedDispositions": [
+    "public-include",
+    "private-source-only",
+    "rewrite-before-include",
+    "manual-review"
+  ],
+  "rules": [
+    {"id":"public-root-env-example","kind":"exact","pattern":".env.example","disposition":"public-include","reason":"Manually reviewed: explicit placeholders, one public provider base URL, and non-secret tuning values only."},
+    {"id":"public-app-env-example","kind":"exact","pattern":"apps/orchestrator/.env.example","disposition":"public-include","reason":"Manually reviewed: variable names, empty values, and public model names only."},
+    {"id":"public-synthetic-preflight-fixture","kind":"exact","pattern":"apps/orchestrator/test/preflight-vercel-preview.test.mjs","disposition":"public-include","reason":"Email-shaped detections are synthetic Git remote fixtures and do not identify a person."},
+    {"id":"private-root-operator-agents","kind":"exact","pattern":"AGENTS.md","disposition":"private-source-only","reason":"Operator paths and collaborator instructions are not part of the public product surface."},
+    {"id":"private-root-workspace","kind":"exact","pattern":"WORKSPACE.md","disposition":"private-source-only","reason":"Workspace-specific operator material remains in the private source repository."},
+    {"id":"private-gitleaks-history-ignore","kind":"exact","pattern":".gitleaksignore","disposition":"private-source-only","reason":"References private repository history and is not needed in a history-free public export."},
+    {"id":"private-nanokat-workspace","kind":"prefix","pattern":".nanokat/","disposition":"private-source-only","reason":"Workspace coordination metadata remains private."},
+    {"id":"private-master-handoff","kind":"exact","pattern":"docs/QWEN_NANOKAT_MISSION_SOCIETY_MASTER_HANDOFF.md","disposition":"private-source-only","reason":"Contains operator handoff and infrastructure context."},
+    {"id":"private-submission-doc","kind":"exact","pattern":"docs/SUBMISSION.md","disposition":"private-source-only","reason":"Time-bound submission material is not part of the public product documentation."},
+    {"id":"private-grants","kind":"prefix","pattern":"docs/grants/","disposition":"private-source-only","reason":"Grant and application material remains private unless separately rewritten and approved."},
+    {"id":"private-handoffs","kind":"prefix","pattern":"docs/handoffs/","disposition":"private-source-only","reason":"Internal handoffs and review notes remain private."},
+    {"id":"public-classification-doc","kind":"exact","pattern":"docs/public-candidate-classification.md","disposition":"public-include","reason":"Defines the public-candidate boundary and publication strategy."},
+    {"id":"public-release-audit-doc","kind":"exact","pattern":"docs/public-release-audit.md","disposition":"public-include","reason":"Sanitized audit methodology and recorded summary."},
+    {"id":"public-release-checklist","kind":"exact","pattern":"docs/public-release-checklist.md","disposition":"public-include","reason":"Fail-closed public-release checklist."},
+    {"id":"public-alpha-readiness","kind":"exact","pattern":"docs/public-alpha-readiness-2026-08-01.md","disposition":"public-include","reason":"Sanitized readiness baseline with explicit NO-GO boundaries."},
+    {"id":"public-verified-media-smoke-runbook","kind":"exact","pattern":"docs/runbooks/VERIFIED_MEDIA_PACKAGE_SMOKE.md","disposition":"public-include","reason":"Reviewed and rewritten with repository-relative commands; contains no credential values or private account identifiers."},
+    {"id":"private-vercel-runbook","kind":"exact","pattern":"docs/runbooks/vercel-solforge.md","disposition":"private-source-only","reason":"Contains source-repository, Vercel account, project, domain, and operator release identifiers that are unnecessary in the public alpha."},
+    {"id":"public-signature-verification-runbook","kind":"exact","pattern":"docs/runbooks/verify-media-package-signature.md","disposition":"public-include","reason":"Reviewed and rewritten with repository-relative commands and placeholder deployment values."},
+    {"id":"manual-runbooks","kind":"prefix","pattern":"docs/runbooks/","disposition":"manual-review","reason":"Any newly added runbook must receive an explicit public or private classification."},
+    {"id":"manual-other-docs","kind":"prefix","pattern":"docs/","disposition":"manual-review","reason":"Any newly added documentation requires human review before export."},
+    {"id":"private-evidence","kind":"prefix","pattern":"evidence/","disposition":"private-source-only","reason":"Evidence, organizer material, transcripts, provenance exports, and media remain private for the initial public alpha."},
+    {"id":"public-app-code","kind":"prefix","pattern":"apps/","disposition":"public-include","reason":"Product application code, tests, package manifests, and runtime assets form the core public candidate."},
+    {"id":"public-mcp-readme","kind":"exact","pattern":"tools/mcp/README_MCP.md","disposition":"public-include","reason":"Reviewed and rewritten with repository-relative, platform-neutral setup instructions."},
+    {"id":"public-tools","kind":"prefix","pattern":"tools/","disposition":"public-include","reason":"Reusable tooling and release-audit controls are public-candidate material."},
+    {"id":"public-policy","kind":"prefix","pattern":"policy/","disposition":"public-include","reason":"Model and role policy files are part of the product contract."},
+    {"id":"public-github","kind":"prefix","pattern":".github/","disposition":"public-include","reason":"CI and read-only release-audit workflows are part of the public engineering surface."},
+    {"id":"public-readme","kind":"exact","pattern":"README.md","disposition":"public-include","reason":"Primary public project overview."},
+    {"id":"public-security","kind":"exact","pattern":"SECURITY.md","disposition":"public-include","reason":"Public security reporting and trust boundary."},
+    {"id":"public-contributing","kind":"exact","pattern":"CONTRIBUTING.md","disposition":"public-include","reason":"Public contribution guidance."},
+    {"id":"public-license","kind":"exact","pattern":"LICENSE","disposition":"public-include","reason":"Root MIT license."},
+    {"id":"public-gitignore","kind":"exact","pattern":".gitignore","disposition":"public-include","reason":"Repository hygiene rules."},
+    {"id":"public-role-validator-entrypoint","kind":"exact","pattern":"validate-development-personas.mjs","disposition":"public-include","reason":"Public role-manifest validator entrypoint."}
+  ],
+  "reviewedPublicExceptions": [
+    {"path":".env.example","basis":"Explicit placeholder strings, public provider base URL, and non-secret booleans/comments only."},
+    {"path":"apps/orchestrator/.env.example","basis":"Empty assignments and public model names only; no credential values."},
+    {"path":"apps/orchestrator/test/preflight-vercel-preview.test.mjs","basis":"Email-shaped matches are synthetic Git remote fixture strings."},
+    {"path":"tools/mcp/README_MCP.md","basis":"Local operator paths were removed; commands are repository-relative and no private identifiers or credential values remain."}
+  ],
+  "cleanupReview": {
+    "mcpReadme": "public-include-after-rewrite",
+    "verifiedMediaSmokeRunbook": "public-include-after-rewrite",
+    "signatureVerificationRunbook": "public-include-after-rewrite",
+    "vercelRunbook": "private-source-only",
+    "packageLicense": "MIT",
+    "packageLockLicense": "MIT"
+  },
+  "auditCoverage": {
+    "auditSourceHead": "460ea29d53c6be4150709a3ee5fb7191ec750915",
+    "highConfidenceSecretFindings": 0,
+    "privacySensitivePaths": [
+      "AGENTS.md","WORKSPACE.md","apps/orchestrator/test/preflight-vercel-preview.test.mjs","docs/QWEN_NANOKAT_MISSION_SOCIETY_MASTER_HANDOFF.md","docs/SUBMISSION.md","docs/grants/2026-07-27-submission-kit.md","docs/handoffs/BOB_GATE_B_REVIEW.md","docs/handoffs/BOB_NEXT_PACKAGE.md","docs/handoffs/BOB_PRODUCTIZATION_PLAN.md","docs/handoffs/CODEX_CODE_REVIEW.md","docs/handoffs/CODEX_REVIEW_FINDINGS.md","docs/handoffs/HANDOFF_NEXT.md","docs/handoffs/sylvia-signing.md","evidence/01-submission-text/DEVPOST_PASTE.md","evidence/01-submission-text/INSPIRATION_AND_GALLERY.md","evidence/01-submission-text/JIC_SUBMISSION_EMAIL.md","evidence/01-submission-text/OPENAI_BUILD_WEEK_EVIDENCE_DOSSIER.md","evidence/01-submission-text/ORGANIZER_EMAIL_FULL_NOW.md","evidence/01-submission-text/ORGANIZER_EMAIL_SEND.txt","evidence/01-submission-text/ORGANIZER_EMAIL_TRANSPARENT.md","evidence/01-submission-text/ORGANIZER_FREEZE_PACKAGE.md","evidence/01-submission-text/SUBMISSION.md","evidence/01-submission-text/SUBMISSION_FORM_PASTE.md","evidence/02-media/video/README.md","evidence/03-proof/exports/20260721-grok-session/CHAT_TRANSCRIPT.md","evidence/03-proof/exports/20260721-grok-session/INDEX.md","evidence/03-proof/exports/20260721-grok-session/PROVENANCE.json","evidence/03-proof/exports/20260721-grok-session/SCREENSHOT_INVENTORY.json","evidence/03-proof/exports/20260721-grok-session/chat_scrubbed.jsonl","evidence/03-proof/exports/20260721-grok-session/summary.json","evidence/for-organizers/submission-email.txt","tools/mcp/README_MCP.md"
+    ],
+    "mediaPaths": [
+      "evidence/02-media/video/anime-saga-reel.mp4","evidence/02-media/video/nanokat-forge-build-week-demo.mp4","evidence/02-media/video/narration-jenny.mp3","evidence/archive/images/anime-saga/01-inspiration.jpg","evidence/archive/images/anime-saga/02-deadline-panic.jpg","evidence/archive/images/anime-saga/03-no-face-cam.jpg","evidence/archive/images/anime-saga/04-tts-trials.jpg","evidence/archive/images/anime-saga/05-slideshow-victory.jpg","evidence/archive/images/anime-saga/06-youtube-login-boss.jpg","evidence/archive/images/anime-saga/07-skin-of-teeth-submit.jpg","evidence/archive/images/anime-saga/08-the-pack.jpg","evidence/archive/images/product-screenshots/Screenshot_20260718_225902.png","evidence/archive/images/product-screenshots/Screenshot_20260718_230448.png","evidence/archive/images/product-screenshots/Screenshot_20260718_230708.png","evidence/archive/images/product-screenshots/Screenshot_20260719_011253.png","evidence/archive/images/product-screenshots/Screenshot_20260719_012107.png","evidence/archive/images/product-screenshots/Screenshot_20260719_014030.png","evidence/archive/images/product-screenshots/Screenshot_20260719_071117.png","evidence/archive/images/product-screenshots/Screenshot_20260719_071146.png","evidence/archive/images/product-screenshots/Screenshot_20260719_071248.png","evidence/archive/images/product-screenshots/Screenshot_20260719_071405.png","evidence/archive/images/product-screenshots/Screenshot_20260719_073144.png","evidence/archive/images/product-screenshots/Screenshot_20260719_073334.png","evidence/archive/images/product-screenshots/Screenshot_20260719_085159.png","evidence/archive/images/product-screenshots/Screenshot_20260720_021557.png","evidence/archive/images/product-screenshots/Screenshot_20260720_034844.png","evidence/archive/images/product-screenshots/Screenshot_20260720_035030.png","evidence/archive/images/product-screenshots/Screenshot_20260720_210203.png","evidence/archive/images/product-screenshots/Screenshot_20260721_182755.png","evidence/archive/images/product-screenshots/here you go.png","evidence/archive/images/product-screenshots/proofofdumb.png","evidence/archive/images/product-screenshots/terrible.png","evidence/archive/images/product-screenshots/whyeven.png","evidence/brand/forge-thumbnail.jpg","evidence/for-organizers/demo-video.mp4","evidence/for-organizers/thumbnail.jpg"
+    ]
+  },
+  "releaseBlockers": [
+    "Build the exact history-free export from an approved source commit.",
+    "Run the redacted current-tree and full-history audit on the exact exported candidate.",
+    "Run clean-checkout Node 24 installation and all automated tests on the export.",
+    "Obtain explicit approval before creating a target public repository or changing visibility."
+  ]
+}
