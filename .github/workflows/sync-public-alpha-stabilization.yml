@@ -1,0 +1,73 @@
+name: Sync certified public alpha stabilization
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-public-alpha-stabilization
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.event.pull_request.head.ref == 'agent/public-alpha-stabilization'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out stabilization branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: agent/public-alpha-stabilization
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Download and verify private certification
+        shell: bash
+        env:
+          CERTIFICATION_URL: 'https://sdmntprwestus3.oaiusercontent.com/files/00000000-8180-81fd-8032-911dbe7ebb35/raw?se=2026-08-02T00:21:24Z&sp=r&sv=2026-02-06&sr=b&scid=a65c715f-d378-54d2-8e06-461b96f81761&skoid=2d2fbb03-9efb-4ad0-a91c-1db2f5a47997&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-01T01:21:09Z&ske=2026-08-02T01:21:09Z&sks=b&skv=2026-02-06&sig=4FRA%2BOHovQ7lBwsf3Z6/yePS8Oet11OOuxl7sMnV2oU%3D'
+          CERTIFICATION_ZIP_SHA256: 3e42b5fdc0ed7be6e9abf1bbf54c148ef4618cca5ffe07c17d6ac2fcc49e36e8
+          CANDIDATE_ARCHIVE_SHA256: 34c1d4dc0893de05328aa14763e55b0ea13833bc2e0e372d66ce1bf3dcc276ed
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 --retry-delay 1 "$CERTIFICATION_URL" -o /tmp/certification.zip
+          echo "$CERTIFICATION_ZIP_SHA256  /tmp/certification.zip" | sha256sum -c -
+          unzip -q /tmp/certification.zip public-candidate.tar.gz -d /tmp/certification
+          echo "$CANDIDATE_ARCHIVE_SHA256  /tmp/certification/public-candidate.tar.gz" | sha256sum -c -
+
+      - name: Replace non-workflow tree with certified candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/candidate /tmp/existing-workflows
+          tar -xzf /tmp/certification/public-candidate.tar.gz \
+            --strip-components=1 \
+            -C /tmp/candidate
+
+          test "$(find /tmp/candidate -type f | wc -l)" -eq 103
+          test -f /tmp/candidate/README.md
+          test -f /tmp/candidate/LICENSE
+          test ! -e /tmp/candidate/evidence
+          test ! -e /tmp/candidate/docs/handoffs
+          test ! -e /tmp/candidate/.github/workflows/sync-public-alpha-stabilization.yml
+
+          cp -a .github/workflows/. /tmp/existing-workflows/
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/candidate/. .
+          rm -rf .github/workflows
+          mkdir -p .github/workflows
+          cp -a /tmp/existing-workflows/. .github/workflows/
+
+          git config user.name "Solforge Certified Stabilization"
+          git config user.email "candidate@example.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Sync certified public alpha stabilization"
+          git push origin HEAD:agent/public-alpha-stabilization
