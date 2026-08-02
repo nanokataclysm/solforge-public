@@ -1,10 +1,22 @@
 # Solforge public-alpha release checklist
 
-This checklist controls the transition from the private source repository to a separate, history-free public alpha. A checked item reflects verified evidence rather than intention.
+This checklist records the transition from the private source repository to the separate, history-free public alpha. A checked item reflects verified evidence rather than intention.
 
-## Current decision — NO-GO FOR PUBLICATION
+## Current decision — PUBLIC SOURCE PUBLISHED; NO DEPLOYMENT AUTHORIZED
 
-The candidate may proceed through private review. No target repository, visibility change, public release, or Production operation is authorized.
+The history-free source is published in [`nanokataclysm/solforge-public`](https://github.com/nanokataclysm/solforge-public). The private repository remains canonical. Publication did not authorize a hosted demo, Production promotion, DNS change, credential use, billing action, or storage mutation.
+
+## Publication baseline — 2026-08-01
+
+- Private canonical source commit: `fc9d4f27543e38b2a6a864a847b4888a498137dc`
+- Public target merge commit: `e644216ab10602eb642fad32b0e10c007ce28919`
+- Included public files: 103
+- Excluded private-source-only files: 97
+- Certified tree SHA-256: `738be5bb886c7411314644949302cde02e0a51b5162e49f9b9b453db5bcc8076`
+- Certified archive SHA-256: `7a60c215852b6b730ad63096a82a98cbd3ba498cbac6536874a4f4a65144b14e`
+- Private certification artifact: `8825790866`
+- Public verification artifact: `8825806523`
+- Public candidate export, public release audit, and Solforge CI each passed twice on the exact public PR head before merge.
 
 ## Verified candidate controls
 
@@ -32,7 +44,7 @@ The candidate may proceed through private review. No target repository, visibili
 - [x] Confirm email-shaped test findings are synthetic Git repository fixtures.
 - [x] Keep private signing keys and live credentials outside Git and release artifacts.
 - [x] Remove stale deployment identifiers, protected URLs, private-evidence links, and operator-host details from public-facing files.
-- [ ] Repeat the audit on the exact final documentation head and review any changed findings.
+- [ ] Repeat the audit on the exact publication-stabilization documentation head and review any changed findings.
 
 ## Build and package consistency
 
@@ -44,7 +56,7 @@ The candidate may proceed through private review. No target repository, visibili
 - [x] Compile exported Python modules.
 - [x] Run exported MCP retry tests.
 - [x] Build from a clean exact-commit checkout without operator-global configuration.
-- [ ] Repeat all gates on the exact final documentation head.
+- [ ] Repeat all gates on the exact publication-stabilization documentation head.
 - [ ] Run a credential-free interactive mock-provider demonstration when a stable command is documented.
 
 ## Runtime and claims
@@ -54,7 +66,7 @@ The candidate may proceed through private review. No target repository, visibili
 - [x] Remove public and Production endpoint claims from candidate documentation and UI.
 - [x] Keep protected deployment evidence and signing-custody details private.
 - [x] Remove links to excluded evidence and older public-repository candidates.
-- [ ] Verify every public link and rendered page from an unauthenticated session after target publication.
+- [ ] Verify every public link and rendered page from an unauthenticated session after stabilization merges.
 
 ## Public documentation
 
@@ -62,27 +74,29 @@ The candidate may proceed through private review. No target repository, visibili
 - [x] Replace stale `.github` contribution, security, support, conduct, issue, and pull-request guidance.
 - [x] Make public UI hosting and access-code copy platform-neutral.
 - [x] Keep the roadmap implicit rather than presenting experimental work as committed delivery.
-- [ ] Prepare concise public-alpha release notes for the exact approved candidate.
+- [x] Prepare concise public-alpha release notes.
 - [ ] Confirm private vulnerability reporting works in the target repository.
 - [ ] Complete final human accessibility and plain-language review.
 
-## Final candidate approval
+## Publication approval
 
-- [ ] Exact final export workflow passes.
-- [ ] Human reviewer approves the exact archive hash, tree hash, and complete file list.
-- [ ] Human reviewer accepts every remaining audit finding.
-- [ ] Human reviewer confirms no creator, client, collaborator, or third-party personal data is present.
-- [ ] Human reviewer confirms no Production, DNS, database, storage, credential, billing, authentication-provider, or signing-key mutation is bundled.
+- [x] Exact export workflow passed before publication.
+- [x] Human reviewer approved the exact archive hash, tree hash, and complete file list.
+- [x] Human reviewer accepted the reviewed audit findings.
+- [x] Human reviewer authorized use of the grant-designated public repository.
+- [x] Human reviewer confirmed no Production, DNS, database, storage, credential, billing, authentication-provider, or signing-key mutation was bundled.
+- [x] Public target independently rebuilt the same 103-file tree and identical archive.
 
-## Target repository and settings — separate explicit authorization required
+## Target repository and settings
 
-- [ ] Operator explicitly authorizes target-repository creation.
-- [ ] Create the target repository from the approved history-free export.
-- [ ] Configure description, homepage, topics, issues, discussions, and support surfaces.
+- [x] Operator explicitly authorized the grant-designated target repository.
+- [x] Populate the target repository from the approved history-free export without importing private history.
+- [x] Preserve the existing grant-facing repository URL and prior public history.
+- [ ] Configure repository description, homepage, topics, issues, discussions, and support surfaces.
 - [ ] Enable private vulnerability reporting, secret scanning, and push protection where available.
 - [ ] Configure branch protection and required checks.
-- [ ] Create a public-alpha tag or release only after repository verification.
-- [ ] Verify access, links, documentation rendering, license display, security reporting, and CI.
+- [ ] Create the `v0.1.0-alpha` tag or GitHub release after the stabilization head is verified.
+- [ ] Verify access, links, documentation rendering, license display, security reporting, and CI after stabilization.
 
 ## Rollback
 

@@ -1,29 +1,28 @@
 # Solforge public-candidate classification
 
-## Decision
+## Current status
 
-The initial public alpha should be produced as a **history-free clean export into a separate repository**.
+The initial public alpha was produced as a **history-free clean export into a separate repository**. The private canonical repository remains `nanokataclysm/solforge`; the approved public target is [`nanokataclysm/solforge-public`](https://github.com/nanokataclysm/solforge-public).
 
-The existing `nanokataclysm/solforge` repository remains private. This document does not authorize creating another repository, changing visibility, rewriting history, deleting files, or moving operator evidence.
+Publication preserved the private source history and the existing grant-facing public repository URL. It did not authorize a hosted demo, Production deployment, DNS change, credential operation, storage mutation, billing action, signing-key operation, or deletion of private evidence.
 
-Source baseline:
+Publication baseline:
 
-- private source repository: `nanokataclysm/solforge`;
-- cleanup base: `47ef73970dd797a7d65925a4fe2b88c97304769b`;
-- merged audit source head: `460ea29d53c6be4150709a3ee5fb7191ec750915`;
-- high-confidence secret findings in the merged audit: `0`;
-- privacy-sensitive paths covered: `32`;
-- media paths covered: `36`.
+- private canonical source commit: `fc9d4f27543e38b2a6a864a847b4888a498137dc`;
+- public target merge commit: `e644216ab10602eb642fad32b0e10c007ce28919`;
+- public files included: `103`;
+- private-source-only files excluded: `97`;
+- certified tree SHA-256: `738be5bb886c7411314644949302cde02e0a51b5162e49f9b9b453db5bcc8076`;
+- certified archive SHA-256: `7a60c215852b6b730ad63096a82a98cbd3ba498cbac6536874a4f4a65144b14e`;
+- high-confidence secret findings: `0`.
 
 The machine-readable source of truth is `tools/release-audit/public-candidate-classification.json`. Its validator is `tools/release-audit/validate_public_candidate_classification.py`.
 
 ## Why a clean export
 
-Changing this repository to public would expose reachable history, branches, tags, operator notes, transcripts, evidence exports, and media. Removing those files only from the current tree would not remove them from Git history.
+Changing the private repository to public would expose reachable history, branches, tags, operator notes, transcripts, evidence exports, and media. Removing those files only from the current tree would not remove them from Git history.
 
-A new history-free export is safer and more reversible than rewriting the private source repository. The source repository can continue to preserve internal evidence while the public candidate receives only approved files.
-
-No target repository has been selected or created.
+A history-free export is safer and more reversible than rewriting the private source repository. The private source can preserve internal evidence while the public target receives only approved files.
 
 ## Resolved cleanup review
 
@@ -32,14 +31,14 @@ The cleanup review resolved every tracked `manual-review` and `rewrite-before-in
 - `tools/mcp/README_MCP.md` is public-include after replacing local operator paths with repository-relative setup instructions;
 - `docs/runbooks/VERIFIED_MEDIA_PACKAGE_SMOKE.md` is public-include after replacing the operator checkout path with Git-based repository-root discovery;
 - `docs/runbooks/verify-media-package-signature.md` is public-include after the same path-neutral rewrite;
-- `docs/runbooks/vercel-solforge.md` is private-source-only because it contains private source-repository, Vercel account, project, domain, and operator-release identifiers;
-- `apps/orchestrator/package.json` and `package-lock.json` now declare `MIT`, matching the root license.
+- `docs/runbooks/vercel-solforge.md` is private-source-only because it contains private source-repository, account, project, domain, and operator-release identifiers;
+- `apps/orchestrator/package.json` and `package-lock.json` declare `MIT`, matching the root license.
 
 The validator fails when any tracked file remains `manual-review` or `rewrite-before-include`, or when the package, lockfile, and root license no longer agree on MIT.
 
 ## Public include
 
-The initial allowlist includes:
+The allowlist includes:
 
 - application code, tests, package files, and runtime assets under `apps/`;
 - model and role policy under `policy/`;
@@ -54,7 +53,7 @@ The environment examples contain empty values, explicit placeholders, public mod
 
 ## Private source only
 
-The initial public alpha excludes:
+The public alpha excludes:
 
 - `AGENTS.md`, `WORKSPACE.md`, and `.nanokat/`;
 - `.gitleaksignore`, which refers to private-repository history;
@@ -62,7 +61,7 @@ The initial public alpha excludes:
 - `docs/runbooks/vercel-solforge.md`;
 - all `evidence/` content, including organizer correspondence, transcripts, provenance exports, screenshots, archives, audio, and video.
 
-This classification is conservative. A future evidence excerpt can be rewritten and reviewed in a separate PR; no evidence file is approved by default.
+This classification remains conservative. A future evidence excerpt must be rewritten, explicitly classified, reviewed, and re-audited in a separate change.
 
 ## Fail-closed rules
 
@@ -70,36 +69,31 @@ The validator requires every tracked path to match a classification rule. It als
 
 - zero tracked `manual-review` paths;
 - zero tracked `rewrite-before-include` paths;
-- all audited privacy-sensitive paths to remain non-public unless explicitly documented as a reviewed exception;
+- all audited privacy-sensitive paths to remain non-public unless explicitly documented as reviewed exceptions;
 - every audited media path and every `evidence/` path to remain private;
 - package, lockfile, and root license metadata to remain MIT;
-- the source baseline to remain reachable;
+- the private source baseline to remain reachable when validating the source repository;
 - the publication strategy to keep the private source repository private;
-- explicit authorization before any target repository is created.
+- an exported public target to contain only `public-include` files.
 
 The classification workflow prints paths and counts only. It does not print file contents, matched values, credentials, or private-key material.
 
-## Remaining blockers
+## Post-publication controls
 
-This cleanup does not create the public candidate. Before publication:
+After publication, every stabilization change must:
 
-1. implement a deterministic clean-export builder from an approved source commit;
-2. inspect the exact exported file list and diff;
-3. run the redacted audit against the export;
-4. run clean-checkout Node 24 installation and the complete test suite on the export;
-5. obtain human approval of the exact export;
-6. obtain separate explicit approval before creating a public repository or changing any repository setting.
+1. originate in the private canonical source unless it is inherently target-specific;
+2. pass the exact export, redacted audit, Node.js 24, role, Python, and MCP gates;
+3. be mirrored into the public repository without importing private history;
+4. pass the public-target export, release audit, and CI checks;
+5. avoid deployment, DNS, credential, billing, storage, authentication-provider, or signing-key mutation unless separately authorized.
 
 ## Safety boundary
 
-This cleanup does not:
+Publication did not:
 
-- remove, relocate, or rewrite source files or Git history;
-- create a repository, branch-protection rule, release, or tag;
-- change repository visibility;
+- remove, relocate, or rewrite private source files or Git history;
 - deploy or promote an application;
 - change DNS, databases, B2 objects, credentials, signing keys, authentication providers, billing, or environment variables.
 
-## Rollback
-
-Before merge, close the cleanup PR. After merge, revert its commits. No external-service cleanup is required.
+Repository hardening and release tagging remain separately verifiable post-publication steps.

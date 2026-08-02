@@ -2,7 +2,7 @@
 
 Solforge is a human-gated AI creation system that turns a creator or small-business brief into a structured plan, requires explicit approval before protected operations, and can issue cryptographically signed artifact packages for independent verification.
 
-> **Status:** history-free public-alpha candidate under private review. Publication requires approval of the exact exported tree and separate authorization for the target repository and its settings.
+> **Status:** public-alpha source is published from a separately verified, history-free export in [`nanokataclysm/solforge-public`](https://github.com/nanokataclysm/solforge-public). The private source repository remains canonical. No public demo or Production endpoint is claimed.
 
 ## What works now
 
@@ -30,7 +30,7 @@ The public-candidate gate operates on an exact Git commit and:
 - installs dependencies and runs the complete application suite on Node.js 24;
 - validates JavaScript syntax, role policy, Python modules, and MCP retry behavior.
 
-The latest reviewed gate passed 252 tests across 39 suites with zero test failures and zero npm vulnerabilities. The exported candidate contained no media files, operator handoffs, transcripts, or high-confidence secret findings. Detailed operator and deployment evidence remains private and is intentionally excluded from the candidate.
+The publication baseline passed 252 tests across 39 suites with zero test failures and zero npm vulnerabilities. The exported candidate contained no media files, operator handoffs, transcripts, or high-confidence secret findings. Detailed operator and deployment evidence remains private and is intentionally excluded from the public repository.
 
 No public demo or Production endpoint is claimed by this repository.
 
@@ -96,7 +96,7 @@ Solforge treats briefs, model output, generated plans, imported artifacts, and c
 
 Read [`SECURITY.md`](SECURITY.md) before reporting a vulnerability and [`CONTRIBUTING.md`](CONTRIBUTING.md) before proposing changes.
 
-The candidate has passed its automated export and test controls, but publication remains a **NO-GO** until a human reviewer approves the exact final export and the operator separately authorizes creation and configuration of the target repository. The controlling gate is [`docs/public-release-checklist.md`](docs/public-release-checklist.md).
+The history-free public source has been published after exact private-source certification and independent validation in the public target. Repository hardening, release tagging, and any later deployment remain separate operational steps. The controlling record is [`docs/public-release-checklist.md`](docs/public-release-checklist.md).
 
 ## License
 

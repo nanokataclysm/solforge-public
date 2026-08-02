@@ -5,9 +5,9 @@
   "publicationStrategy": {
     "mode": "history-free-clean-export",
     "sourceRepositoryRemainsPrivate": true,
-    "targetRepository": null,
+    "targetRepository": "nanokataclysm/solforge-public",
     "authorizationRequiredBeforeTargetCreation": true,
-    "reason": "The private source history contains operator, transcript, evidence, and media material. A clean allowlisted export avoids publishing or rewriting that history."
+    "reason": "The private source history contains operator, transcript, evidence, and media material. The explicitly authorized grant-designated target receives only the reviewed history-free allowlisted export."
   },
   "allowedDispositions": [
     "public-include",
@@ -28,9 +28,9 @@
     {"id":"private-grants","kind":"prefix","pattern":"docs/grants/","disposition":"private-source-only","reason":"Grant and application material remains private unless separately rewritten and approved."},
     {"id":"private-handoffs","kind":"prefix","pattern":"docs/handoffs/","disposition":"private-source-only","reason":"Internal handoffs and review notes remain private."},
     {"id":"public-classification-doc","kind":"exact","pattern":"docs/public-candidate-classification.md","disposition":"public-include","reason":"Defines the public-candidate boundary and publication strategy."},
-    {"id":"public-release-audit-doc","kind":"exact","pattern":"docs/public-release-audit.md","disposition":"public-include","reason":"Sanitized audit methodology and recorded summary."},
-    {"id":"public-release-checklist","kind":"exact","pattern":"docs/public-release-checklist.md","disposition":"public-include","reason":"Fail-closed public-release checklist."},
-    {"id":"public-alpha-readiness","kind":"exact","pattern":"docs/public-alpha-readiness-2026-08-01.md","disposition":"public-include","reason":"Sanitized readiness baseline with explicit NO-GO boundaries."},
+    {"id":"public-release-audit-doc","kind":"exact","pattern":"docs/public-release-audit.md","disposition":"public-include","reason":"Sanitized audit methodology and recorded publication summary."},
+    {"id":"public-release-checklist","kind":"exact","pattern":"docs/public-release-checklist.md","disposition":"public-include","reason":"Fail-closed public-release checklist and publication record."},
+    {"id":"public-alpha-readiness","kind":"exact","pattern":"docs/public-alpha-readiness-2026-08-01.md","disposition":"public-include","reason":"Sanitized readiness and publication baseline with explicit operational boundaries."},
     {"id":"public-verified-media-smoke-runbook","kind":"exact","pattern":"docs/runbooks/VERIFIED_MEDIA_PACKAGE_SMOKE.md","disposition":"public-include","reason":"Reviewed and rewritten with repository-relative commands; contains no credential values or private account identifiers."},
     {"id":"private-vercel-runbook","kind":"exact","pattern":"docs/runbooks/vercel-solforge.md","disposition":"private-source-only","reason":"Contains source-repository, Vercel account, project, domain, and operator release identifiers that are unnecessary in the public alpha."},
     {"id":"public-signature-verification-runbook","kind":"exact","pattern":"docs/runbooks/verify-media-package-signature.md","disposition":"public-include","reason":"Reviewed and rewritten with repository-relative commands and placeholder deployment values."},
@@ -74,9 +74,9 @@
     ]
   },
   "releaseBlockers": [
-    "Build the exact history-free export from an approved source commit.",
-    "Run the redacted current-tree and full-history audit on the exact exported candidate.",
-    "Run clean-checkout Node 24 installation and all automated tests on the export.",
-    "Obtain explicit approval before creating a target public repository or changing visibility."
+    "Repeat the exact export, audit, Node.js 24, role, Python, and MCP gates on the publication-stabilization head.",
+    "Mirror only the verified history-free export into nanokataclysm/solforge-public.",
+    "Configure supported repository security and branch-protection settings.",
+    "Create the v0.1.0-alpha tag or GitHub release only after the stabilized public head passes its target-side gates."
   ]
 }
