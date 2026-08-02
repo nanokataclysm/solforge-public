@@ -1,24 +1,21 @@
-# Code of conduct — NANOKAT Forge
+# Solforge code of conduct
 
 ## Short version
 
-Be kind, be precise, don’t dump secrets, don’t claim unshipped features as live.
+Be kind, be precise, do not expose secrets or personal data, and do not describe unshipped features as live.
 
-## Expected
+## Expected behavior
 
-- Assume good intent; prefer clear repros over heat.
-- Respect time: short issues, focused PRs.
-- No harassment, bigotry, or doxxing.
-- No social-engineering for tokens, vault paths, or demo codes.
+- Assume good intent and prefer clear reproductions over heat.
+- Respect other people's time with focused issues and pull requests.
+- Do not harass, threaten, discriminate, doxx, or socially engineer contributors.
+- Do not request or disclose tokens, keys, access codes, private paths, or personal information.
+- Separate verified behavior from planned or experimental work.
 
 ## Product integrity
 
-Misleading judges or users about what runs in production (model provider, approval gates, deploy scope) is treated as a conduct problem, not just a docs nit.
+Misrepresenting the model provider, approval boundary, deployment scope, signing custody, or release status is a project-integrity problem, not merely a documentation issue.
 
 ## Enforcement
 
-The repository owner may edit, close, or ban for repeated harm, spam, or secret dumping. Report private safety issues per [SECURITY.md](SECURITY.md).
-
-## Attribution
-
-Adapted for a small operator-led open repo; spirit aligns with common open-source conduct norms without importing a full corporate template.
+The repository owner may edit, close, restrict, or remove participation for repeated harm, spam, harassment, deception, or secret disclosure. Report security concerns privately according to [`SECURITY.md`](SECURITY.md).

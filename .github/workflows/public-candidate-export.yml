@@ -1,0 +1,215 @@
+name: Public candidate export
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/public-candidate-export.yml"
+      - "tools/release-audit/**"
+      - "docs/public-candidate-classification.md"
+      - "docs/public-release-checklist.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact candidate head
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Compile and test builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            tools/release-audit/build_public_candidate.py \
+            tools/release-audit/test_build_public_candidate.py
+          python -m unittest -v tools/release-audit/test_build_public_candidate.py
+
+      - name: Build exact candidate twice
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p candidate-output/first candidate-output/second
+          python tools/release-audit/build_public_candidate.py \
+            --source HEAD \
+            --output-dir candidate-output/first/tree \
+            --archive candidate-output/first/public-candidate.tar.gz \
+            --report candidate-output/first/public-candidate.json
+          python tools/release-audit/build_public_candidate.py \
+            --source HEAD \
+            --output-dir candidate-output/second/tree \
+            --archive candidate-output/second/public-candidate.tar.gz \
+            --report candidate-output/second/public-candidate.json
+          cmp candidate-output/first/public-candidate.tar.gz candidate-output/second/public-candidate.tar.gz
+          cmp candidate-output/first/public-candidate.json candidate-output/second/public-candidate.json
+
+      - name: Verify fail-closed export boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import stat
+          import tarfile
+
+          root = pathlib.Path("candidate-output/first/tree")
+          archive_path = pathlib.Path("candidate-output/first/public-candidate.tar.gz")
+          report = json.loads(pathlib.Path("candidate-output/first/public-candidate.json").read_text())
+          records = {item["path"]: item for item in report["files"]}
+          exported = set(records)
+          actual = set()
+
+          private_prefixes = ("evidence/", "docs/handoffs/", "docs/grants/", ".nanokat/")
+          assert report["ok"] is True
+          assert report["historyIncluded"] is False
+          assert report["repositoryCreated"] is False
+          assert report["repositorySettingsChanged"] is False
+          assert report["includedFileCount"] == len(exported)
+          classification_counts = report["classificationCounts"]
+          exported_target = classification_counts == {
+              "public-include": report["includedFileCount"]
+          }
+          if exported_target:
+              assert report["excludedPrivateFileCount"] == 0
+          else:
+              assert report["excludedPrivateFileCount"] > 0
+          assert hashlib.sha256(archive_path.read_bytes()).hexdigest() == report["archiveSha256"]
+          assert not any(path.startswith(private_prefixes) for path in exported)
+          assert "AGENTS.md" not in exported
+          assert "WORKSPACE.md" not in exported
+          assert ".gitleaksignore" not in exported
+          assert "docs/runbooks/vercel-solforge.md" not in exported
+          assert "README.md" in exported
+          assert "LICENSE" in exported
+
+          for path in sorted(root.rglob("*")):
+              if not path.is_file():
+                  continue
+              relative = path.relative_to(root).as_posix()
+              actual.add(relative)
+              record = records[relative]
+              content = path.read_bytes()
+              assert hashlib.sha256(content).hexdigest() == record["sha256"]
+              assert f"{stat.S_IMODE(path.stat().st_mode):o}" == record["mode"]
+          assert actual == exported
+
+          with tarfile.open(archive_path, "r:gz") as archive:
+              for member in archive.getmembers():
+                  assert member.mtime == 0
+                  assert member.uid == 0 and member.gid == 0
+                  assert member.uname == "" and member.gname == ""
+                  assert not (member.issym() or member.islnk() or member.ischr() or member.isblk() or member.isfifo())
+          PY
+
+      - name: Audit history-free exported candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd candidate-output/first/tree
+          git init -q --initial-branch=main
+          git config user.name "Public Candidate Audit"
+          git config user.email "candidate@example.com"
+          git add -A
+          git diff --cached --check
+          GIT_AUTHOR_DATE="1970-01-01T00:00:00Z" \
+          GIT_COMMITTER_DATE="1970-01-01T00:00:00Z" \
+            git commit -qm "history-free candidate"
+          python tools/release-audit/scan_repository.py \
+            --output ../public-candidate-audit.json \
+            --fail-on-high
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("../public-candidate-audit.json").read_text())
+          manifest = json.loads(Path("tools/release-audit/public-candidate-classification.json").read_text())
+          reviewed = {
+              item["path"]
+              for item in manifest["reviewedPublicExceptions"]
+              if isinstance(item, dict) and isinstance(item.get("path"), str)
+          }
+          reviewed_findings = {
+              item["path"]
+              for item in report["findings"]
+              if item["severity"] in {"medium", "privacy"}
+          }
+          assert report["ok"] is True
+          assert report["findingsTruncated"] is False
+          assert report["summary"]["severityCounts"].get("high", 0) == 0
+          assert report["currentTree"]["mediaFiles"] == 0
+          assert report["currentTree"]["operatorOrTranscriptPaths"] == 0
+          assert reviewed_findings <= reviewed
+          PY
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: candidate-output/first/tree/apps/orchestrator/.nvmrc
+          cache: npm
+          cache-dependency-path: candidate-output/first/tree/apps/orchestrator/package-lock.json
+
+      - name: Verify exported Node 24 runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e 'const major = Number(process.versions.node.split(".")[0]); if (major !== 24) { throw new Error(`Expected Node 24.x, received ${process.versions.node}`); }'
+
+      - name: Install exported orchestrator dependencies
+        working-directory: candidate-output/first/tree/apps/orchestrator
+        run: npm ci
+
+      - name: Check exported JavaScript syntax
+        working-directory: candidate-output/first/tree/apps/orchestrator
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . \
+            -path ./node_modules -prune -o \
+            -type f -name '*.mjs' -print0 |
+            xargs -0 -r -n1 node --check
+          node --check public/app.js
+
+      - name: Run complete exported orchestrator tests
+        working-directory: candidate-output/first/tree/apps/orchestrator
+        run: npm test
+
+      - name: Validate exported role manifest
+        working-directory: candidate-output/first/tree/apps/orchestrator
+        run: npm run validate-roles
+
+      - name: Compile exported MCP Python modules
+        run: |
+          python -m py_compile \
+            candidate-output/first/tree/tools/mcp/agent_roles.py \
+            candidate-output/first/tree/tools/mcp/model_router.py \
+            candidate-output/first/tree/tools/mcp/test_mcp_retry.py
+
+      - name: Run exported MCP mock retry tests
+        working-directory: candidate-output/first/tree
+        run: python tools/mcp/test_mcp_retry.py
+
+      - name: Upload private review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-candidate-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            candidate-output/first/public-candidate.tar.gz
+            candidate-output/first/public-candidate.json
+            candidate-output/first/public-candidate-audit.json
+          if-no-files-found: error
+          retention-days: 7

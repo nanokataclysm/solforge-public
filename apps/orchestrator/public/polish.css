@@ -130,6 +130,19 @@ body::before {
   backdrop-filter: blur(18px);
 }
 
+#intake-heading,
+#approval-heading,
+#result-heading {
+  scroll-margin-block-start: 96px;
+}
+
+#intake-heading:focus,
+#approval-heading:focus,
+#result-heading:focus {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
 .stepper-list {
   border-radius: 12px;
   background: rgba(19, 20, 31, 0.86);
@@ -216,7 +229,6 @@ body::before {
   font-size: 0.82rem;
 }
 
-/* Mission Society */
 .mission-page {
   min-height: 100vh;
 }
@@ -459,6 +471,12 @@ body::before {
 
   .forge-stepper {
     position: static;
+  }
+
+  #intake-heading,
+  #approval-heading,
+  #result-heading {
+    scroll-margin-block-start: 24px;
   }
 
   .site-footer,

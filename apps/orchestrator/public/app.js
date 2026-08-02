@@ -1,6 +1,9 @@
 const intakePanel = document.querySelector("#intake-panel");
 const approvalPanel = document.querySelector("#approval-panel");
 const resultPanel = document.querySelector("#result-panel");
+const intakeHeading = document.querySelector("#intake-heading");
+const approvalHeading = document.querySelector("#approval-heading");
+const resultHeading = document.querySelector("#result-heading");
 
 const accessCode = document.querySelector("#access-code");
 const briefInput = document.querySelector("#brief");
@@ -61,7 +64,7 @@ async function refreshHealth() {
     statusLabel.textContent = `${payload.provider?.includes("Alibaba") ? "Qwen" : "Live"} · ${payload.model ?? "online"}`;
     statusSub.textContent = payload.approvalGate
       ? `Gate: ${payload.approvalGate}`
-      : "Cloud Run · online";
+      : "Runtime · online";
   } catch {
     statusPill?.classList.add("is-down");
     statusPill?.classList.remove("is-live");
@@ -96,7 +99,7 @@ async function ensureAuthenticated() {
   if (authenticated) return;
   const accessCodeValue = accessCode ? accessCode.value.trim() : "";
   if (!accessCodeValue) {
-    throw new Error("Enter the private demo access code.");
+    throw new Error("Enter the configured access code.");
   }
   const response = await fetch("/api/auth/login", {
     method: "POST",
@@ -216,13 +219,19 @@ function updateStepper(panel) {
   step3Indicator?.classList.toggle("is-completed", false);
 }
 
-function show(panel) {
+function show(panel, heading) {
   for (const element of [intakePanel, approvalPanel, resultPanel]) {
     if (element) element.classList.toggle("hidden", element !== panel);
   }
 
   updateStepper(panel);
-  panel?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (heading) {
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    heading.scrollIntoView({ behavior, block: "start" });
+    heading.focus({ preventScroll: true });
+  } else {
+    panel?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 function renderPlan(plan) {
@@ -427,7 +436,7 @@ planButton?.addEventListener("click", async () => {
     currentPlan = payload.plan;
     renderPlan(currentPlan);
     setMessage(planMessage, payload.model ? `Plan ready · model ${payload.model}` : "");
-    show(approvalPanel);
+    show(approvalPanel, approvalHeading);
   } catch (error) {
     setMessage(
       planMessage,
@@ -552,7 +561,7 @@ approveButton?.addEventListener("click", async () => {
     }
 
     setMessage(buildMessage, statusMessage);
-    show(resultPanel);
+    show(resultPanel, resultHeading);
   } catch (error) {
     setMessage(
       buildMessage,
@@ -599,7 +608,7 @@ reviseButton?.addEventListener("click", () => {
   publicKeyFingerprint = null;
   artifactContextId = null;
   clearRunMessages();
-  show(intakePanel);
+  show(intakePanel, intakeHeading);
 });
 
 restartButton?.addEventListener("click", () => {
@@ -612,7 +621,7 @@ restartButton?.addEventListener("click", () => {
   if (executionTrace) executionTrace.innerHTML = "";
   if (previewFrame) previewFrame.innerHTML = "";
   clearRunMessages();
-  show(intakePanel);
+  show(intakePanel, intakeHeading);
 });
 
 logoutButton?.addEventListener("click", async () => {

@@ -1,38 +1,36 @@
 ## Summary
 
-<!-- What does this PR do, in 1–3 sentences? Prefer “plan/preview/host/docs” over vague “improvements”. -->
+<!-- What does this PR change, and why is it the smallest safe change? -->
 
 ## Product surface touched
 
-- [ ] Orchestrator API (`/health`, `/api/plan`, `/api/build-preview`, …)
+- [ ] Orchestrator API
 - [ ] Frontend (`apps/orchestrator/public/`)
-- [ ] Hosting / deploy configuration
-- [ ] Tests (`apps/orchestrator/test/`)
-- [ ] Documentation (`README.md`, `docs/`, `.github/`)
-- [ ] MCP server or agent scaffolding
-- [ ] Other: <!-- … -->
+- [ ] Authentication or approval boundary
+- [ ] Provider, persistence, media, or signing integration
+- [ ] Deployment or runtime configuration
+- [ ] Tests
+- [ ] Public documentation or release tooling
+- [ ] MCP or agent tooling
+- [ ] Other: <!-- describe -->
 
 ## Runtime honesty
 
-<!-- Live demo inference is Qwen (DashScope). OpenAI GPT/Codex are build-process tools unless this PR changes that. -->
+- Reference model path changed? **No / Yes** → <!-- provider/model -->
+- Human approval gate remains required? **Yes / No** → <!-- explain -->
+- Any autonomous external write, deploy, DNS, purchase, or credential behavior added? **No / Yes** → <!-- explain -->
 
-- Live model path changed? **No / Yes** → <!-- which model / env -->
-- Human approval gate still required before preview? **Yes / No (explain)**
-
-## Test plan
+## Validation
 
 - [ ] `cd apps/orchestrator && npm test`
-- [ ] Local or Cloud Run smoke (`npm run smoke` or manual plan → approve → preview)
-- [ ] No secrets in diff (`.env*`, private PEMs, demo tokens)
+- [ ] Relevant syntax, policy, Python, MCP, or export checks
+- [ ] No secrets, private keys, access codes, cookies, or personal data in the diff
+- [ ] Claims distinguish implemented, planned, and out-of-scope behavior
 
-## Screenshots / logs
+## Evidence
 
-<!-- Optional: UI stills, `curl /health` JSON, test output -->
+<!-- Provide concise, redacted test output or screenshots. Never paste live credentials or private logs. -->
 
-## Host note
+## Risks and rollback
 
-Document any platform-specific assumptions introduced by this change.
-
-## Merge notes
-
-<!-- Anything for main: env vars, Cloud Run redeploy, docs. -->
+<!-- What could fail, what was not tested, and how should this change be reverted? -->

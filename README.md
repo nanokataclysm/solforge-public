@@ -1,60 +1,75 @@
 # Solforge
 
-Human-gated AI website planning for small businesses, creators, and independent teams.
+Solforge is a human-gated AI creation system that turns a creator or small-business brief into a structured plan, requires explicit approval before protected operations, and can issue cryptographically signed artifact packages for independent verification.
 
-**Status:** Public alpha
+> **Status:** history-free public-alpha candidate under private review. Publication requires approval of the exact exported tree and separate authorization for the target repository and its settings.
 
-**Demo:** https://solforge.nanokat.com
+## What works now
 
-Solforge turns a creative brief into a structured Qwen-generated website plan, requires explicit human approval, renders an isolated preview, and produces a cryptographically signed JSON package.
+- Qwen planning through Alibaba Cloud Model Studio's OpenAI-compatible API.
+- Server-side authentication sessions with HttpOnly cookies.
+- CSRF-header enforcement for state-changing API requests.
+- Human approval bound to the authenticated session, exact operation context, and one-time nonce.
+- Validated, isolated HTML preview generation.
+- Bounded Navigator → specialist → Council Chair analysis that proposes actions without executing them.
+- Ed25519-signed JSON packages and a public-key endpoint.
+- Verified-media packages that fail closed when stored B2 metadata does not match the approved intent.
+- An independent verifier for the public-key document, fingerprint binding, canonical receipt digest, and Ed25519 signature.
 
-## What it does
+Solforge does **not** autonomously deploy websites, change DNS, purchase services, rotate credentials, mutate storage objects, publish blockchain transactions, or promote builds to Production.
 
-1. Accepts a project brief.
-2. Uses Qwen to create a structured plan.
-3. Requires a front-door authenticated session.
-4. Presents the exact plan for human approval.
-5. Binds approval to the plan digest, expiry, and one-time nonce.
-6. Generates an isolated HTML preview.
-7. Produces a signed JSON package.
-8. Exposes the Ed25519 public key for independent verification.
+## Release verification
 
-## Safety boundaries
+The public-candidate gate operates on an exact Git commit and:
 
-- No silent production deployment.
-- No DNS mutation from the preview workflow.
-- No client-only `approved: true` shortcut.
-- No secret access during preview generation.
-- Approval rejects changed plans, expiry, and replay.
-- Login retries are bounded.
-- Development signing is not represented as production key custody.
+- exports only paths classified `public-include`;
+- rejects unresolved classifications, unsafe paths, symlinks, submodules, and destination collisions;
+- builds the directory tree, archive, and inventory twice and requires byte-identical results;
+- verifies every exported file against its recorded mode, size, Git blob, and SHA-256;
+- scans a one-commit, history-free candidate without printing matched values;
+- installs dependencies and runs the complete application suite on Node.js 24;
+- validates JavaScript syntax, role policy, Python modules, and MCP retry behavior.
 
-## Stack
+The latest reviewed gate passed 252 tests across 39 suites with zero test failures and zero npm vulnerabilities. The exported candidate contained no media files, operator handoffs, transcripts, or high-confidence secret findings. Detailed operator and deployment evidence remains private and is intentionally excluded from the candidate.
 
-| Layer | Implementation |
+No public demo or Production endpoint is claimed by this repository.
+
+## Architecture
+
+| Layer | Current implementation |
 |---|---|
-| Interface | HTML, CSS, and browser JavaScript |
-| Service | Node.js and Express |
-| Inference | Qwen through a DashScope-compatible API |
-| Authentication | HttpOnly session cookie |
-| Approval | Server-bound plan digest and one-time nonce |
-| Durable state | Configurable server-side storage |
-| Signing | Ed25519 signed JSON packages |
-| Hosting | Vercel-compatible orchestrator |
+| Runtime | Node.js and Express under `apps/orchestrator` |
+| Release contract | Node.js 24 with clean-install and exact-export validation |
+| Reference model provider | Qwen through the DashScope-compatible API |
+| Session, approval, and login-limit state | Upstash Redis REST in multi-instance deployments |
+| Preview boundary | Validated plan rendered as isolated HTML |
+| Verified-media lookup | Read-only Backblaze B2 metadata checks |
+| Artifact signing | Ed25519 JSON envelopes using the `solforge-dev` development identity |
+| Independent verification | Public-key document, fingerprint pin, receipt digest, and signature checks |
 
-## Repository layout
+Qwen is the current reference provider. Provider portability is a planned direction, not a claim that additional providers are already implemented.
 
-```text
-apps/orchestrator/  Application, interface, and tests
-policy/             Model and operating policy
-tools/              Validation and local tooling
-docs/               Public technical documentation
-.github/            CI and repository metadata
-```
+## API overview
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/health` | Report provider, model, storage backends, and multi-instance safety state |
+| `POST` | `/api/auth/login` | Create an authenticated server session from the configured access code |
+| `GET` | `/api/auth/session` | Inspect the current authentication state |
+| `POST` | `/api/auth/logout` | Invalidate the current authentication session |
+| `POST` | `/api/plan` | Convert a brief into a validated structured plan |
+| `POST` | `/api/mission/analyze` | Run bounded multi-role analysis without executing proposed actions |
+| `POST` | `/api/approve` | Bind approval to an exact operation and intent context |
+| `POST` | `/api/build-preview` | Produce an isolated preview after valid approval |
+| `POST` | `/api/package` | Produce a signed JSON package after valid approval |
+| `POST` | `/api/media/package` | Verify approved B2-backed media metadata and issue a signed receipt |
+| `GET` | `/api/signing/public-key` | Return the public Ed25519 key document and fingerprint |
+
+State-changing `/api` requests require the application's CSRF header. Authentication details and live credentials belong in private operator configuration, not documentation or source control.
 
 ## Local development
 
-Requirements: Node.js 20 or newer and npm.
+Use Node.js 24 to match the release gate. The package retains a broader Node `>=20` compatibility floor.
 
 ```bash
 cd apps/orchestrator
@@ -63,27 +78,26 @@ npm test
 npm start
 ```
 
-Live Qwen inference additionally requires the environment variables documented in `.env.example`. Never commit populated environment files or secret values.
+Environment variable names and placeholder-only guidance are in [`apps/orchestrator/.env.example`](apps/orchestrator/.env.example). Do not commit `.env` files, provider keys, Redis tokens, B2 credentials, cookies, or signing keys.
 
-## Verification
+Useful development commands include:
 
 ```bash
-git diff --check
-node --check apps/orchestrator/server.mjs
-node --check apps/orchestrator/public/app.js
-cd apps/orchestrator && npm test
+npm run preflight:preview
+npm run smoke:verified-media
+npm run verify:media-package -- --help
 ```
 
-Changes affecting authentication, approval binding, signing, preview isolation, or deployment boundaries require focused security review.
+Live-provider, storage, signing, and deployment checks require separately authorized credentials and must not be run against Production without explicit operator approval.
 
-## Contributing
+## Security and publication status
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md).
+Solforge treats briefs, model output, generated plans, imported artifacts, and client-supplied approval state as untrusted input. Human approval is enforced server-side and bound to exact request context.
 
-## Security
+Read [`SECURITY.md`](SECURITY.md) before reporting a vulnerability and [`CONTRIBUTING.md`](CONTRIBUTING.md) before proposing changes.
 
-Read [SECURITY.md](SECURITY.md). Do not place credentials, cookies, private keys, or active exploit details in public issues.
+The candidate has passed its automated export and test controls, but publication remains a **NO-GO** until a human reviewer approves the exact final export and the operator separately authorizes creation and configuration of the target repository. The controlling gate is [`docs/public-release-checklist.md`](docs/public-release-checklist.md).
 
 ## License
 
-See [LICENSE](LICENSE).
+Solforge is licensed under the MIT License. The root license, package metadata, and lockfile metadata agree on MIT.
