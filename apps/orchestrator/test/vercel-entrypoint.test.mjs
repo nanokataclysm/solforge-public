@@ -60,6 +60,6 @@ test("Vercel entrypoint surfaces startup failures during import", () => {
   assert.notEqual(result.status, 0);
   assert.match(
     result.stderr,
-    /Production requires a durable approval session store/,
+    /Production requires Upstash Redis for approval sessions/,
   );
 });
