@@ -54,3 +54,5 @@ local-scratch/
 
 # Evidence build intermediates
 .vercel
+.env*
+!.env.example
