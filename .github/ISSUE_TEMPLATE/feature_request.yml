@@ -1,17 +1,17 @@
 name: Feature request
-description: Propose a change that fits Forge’s human-gated plan → preview kernel.
+description: Propose a focused change that preserves Solforge's human-gated safety boundary.
 title: "[feature] "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        Prefer small, demoable slices. Multi-agent Mission Society and production signing
-        are design-tracked separately — say if this is that lane or the live path.
+        Prefer small, testable changes. Clearly distinguish shipped behavior from planned work,
+        and identify anything that must never execute without explicit human approval.
   - type: textarea
     id: problem
     attributes:
-      label: Problem / opportunity
+      label: Problem or opportunity
       placeholder: Who is blocked, and what do they need?
     validations:
       required: true
@@ -19,19 +19,21 @@ body:
     id: proposal
     attributes:
       label: Proposed behavior
-      description: User-visible flow. Call out human approval and what must never auto-deploy.
+      description: Describe the user-visible flow and the approval boundary.
     validations:
       required: true
   - type: dropdown
     id: lane
     attributes:
-      label: Lane
+      label: Area
       options:
-        - Live path (orchestrator / public alpha)
-        - Documentation only
-        - Signing / verification
-        - Mission Society multi-agent (design; not default live claim)
-        - MCP / agent tooling
+        - Orchestrator or frontend
+        - Authentication or approval
+        - Provider or model integration
+        - Persistence, media, or signing
+        - Mission analysis
+        - MCP or agent tooling
+        - Documentation or release process
         - Unsure
     validations:
       required: true
@@ -39,11 +41,13 @@ body:
     id: out-of-scope
     attributes:
       label: Explicit non-goals
-      placeholder: "e.g. no client-side private keys, no fake research as live sources"
+      placeholder: "For example: no automatic deployment, DNS changes, purchases, or client-side private keys"
   - type: checkboxes
     id: honesty
     attributes:
       label: Product honesty
       options:
-        - label: I will not describe unshipped work as live in the public alpha
+        - label: I will not describe planned or experimental work as shipped
+          required: true
+        - label: I identified any external writes or consequential actions requiring human approval
           required: true

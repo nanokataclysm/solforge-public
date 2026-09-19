@@ -1,0 +1,73 @@
+name: Public release audit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/public-release-audit.yml"
+      - "tools/release-audit/**"
+      - "docs/public-release-audit.md"
+      - "docs/public-release-checklist.md"
+      - "docs/public-candidate-classification.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out exact candidate head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Fetch all repository branches and tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          git fetch --tags --force
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile release-audit tools
+        shell: bash
+        run: |
+          python -m py_compile tools/release-audit/scan_repository.py
+          python -m py_compile tools/release-audit/validate_public_candidate_classification.py
+
+      - name: Validate public-candidate classification
+        shell: bash
+        run: python tools/release-audit/validate_public_candidate_classification.py
+
+      - name: Run redacted current-tree and full-history scan
+        id: scan
+        shell: bash
+        run: |
+          set +e
+          mkdir -p audit-output
+          python tools/release-audit/scan_repository.py \
+            --output audit-output/public-release-audit.json \
+            --fail-on-high
+          status=$?
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload sanitized audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-release-audit-${{ github.event.pull_request.head.sha || github.sha }}
+          path: audit-output/public-release-audit.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Enforce high-confidence secret gate
+        shell: bash
+        run: test "${{ steps.scan.outputs.exit_code }}" = "0"

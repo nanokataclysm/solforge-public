@@ -1,36 +1,41 @@
 #!/usr/bin/env node
 /**
- * Smoke a running Solforge without printing the private access code.
+ * Smoke an explicitly selected Solforge runtime without printing its access code.
  * The code is sent once to login; every later request uses HttpOnly-style
  * Cookie headers plus the state-change barrier header.
  */
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const base =
-  process.env.FORGE_URL?.replace(/\/$/, "") ||
-  "https://solforge.nanokat.com";
 const stateHeaders = {
   "Content-Type": "application/json",
   "x-solforge-csrf": "1",
 };
 
-function loadSecret() {
-  if (process.env.DEMO_SHARED_SECRET) return process.env.DEMO_SHARED_SECRET;
-  for (const file of [
-    path.join(scriptDir, "../.env.cloudrun.local"),
-    path.join(scriptDir, "../../../.env.cloudrun.local"),
-  ]) {
-    if (!fs.existsSync(file)) continue;
-    const line = fs
-      .readFileSync(file, "utf8")
-      .split("\n")
-      .find((entry) => entry.startsWith("DEMO_SHARED_SECRET="));
-    if (line) return line.slice("DEMO_SHARED_SECRET=".length).trim();
+function loadBase() {
+  const configured = process.env.FORGE_URL?.trim();
+  if (!configured) {
+    throw new Error("FORGE_URL must explicitly select the runtime to smoke");
   }
-  throw new Error("DEMO_SHARED_SECRET not set and no .env.cloudrun.local found");
+
+  let parsed;
+  try {
+    parsed = new URL(configured);
+  } catch {
+    throw new Error("FORGE_URL must be a valid absolute URL");
+  }
+
+  if (!new Set(["http:", "https:"]).has(parsed.protocol)) {
+    throw new Error("FORGE_URL must use http or https");
+  }
+
+  return configured.replace(/\/$/, "");
+}
+
+function loadSecret() {
+  const secret = process.env.DEMO_SHARED_SECRET?.trim();
+  if (!secret) {
+    throw new Error("DEMO_SHARED_SECRET must be set explicitly");
+  }
+  return secret;
 }
 
 function cookie(setCookie, name) {
@@ -39,14 +44,16 @@ function cookie(setCookie, name) {
   return `${name}=${match[1]}`;
 }
 
-async function json(pathname, init = {}) {
-  const response = await fetch(`${base}${pathname}`, init);
-  const body = await response.json();
-  return { response, body };
-}
-
 async function main() {
+  const base = loadBase();
   const secret = loadSecret();
+
+  async function json(pathname, init = {}) {
+    const response = await fetch(`${base}${pathname}`, init);
+    const body = await response.json();
+    return { response, body };
+  }
+
   console.log("base:", base);
 
   const health = await json("/health");

@@ -18,7 +18,7 @@
       <div class="hero-main">
         <div class="hero-brand">
           <span class="eyebrow">Solforge · Human-Gated AI Workshop</span>
-          <span class="alpha-tag">Public Alpha</span>
+          <span class="alpha-tag">Alpha Preview</span>
         </div>
         <h1>Messy brief in. Human-gated plan. Signed package out.</h1>
         <p class="lede">
@@ -29,7 +29,7 @@
         </p>
         <ul class="chip-row" aria-label="Runtime facts">
           <li class="chip"><span class="chip-dot" aria-hidden="true"></span> Live inference: Qwen</li>
-          <li class="chip"><span class="chip-dot" aria-hidden="true"></span> Host: Google Cloud Run</li>
+          <li class="chip"><span class="chip-dot" aria-hidden="true"></span> Runtime: Node.js 24</li>
           <li class="chip"><span class="chip-dot" aria-hidden="true"></span> Gate: Session-bound approve</li>
           <li class="chip"><span class="chip-dot" aria-hidden="true"></span> Security: Ed25519 Signed</li>
         </ul>
@@ -70,21 +70,21 @@
       <div class="step-heading">
         <span class="step-number">1</span>
         <div>
-          <h2>Describe your website vision</h2>
+          <h2 id="intake-heading" tabindex="-1">Describe your website vision</h2>
           <p>Provide loose notes, brand guidelines, or audience goals. Qwen will structure them into a formal plan.</p>
         </div>
       </div>
 
       <div class="form-group">
         <label for="access-code">
-          <span>Demo access code</span>
+          <span>Access code</span>
           <span class="label-hint">Required once to authorize session</span>
         </label>
         <input
           id="access-code"
           type="password"
           autocomplete="off"
-          placeholder="Private demo access code"
+          placeholder="Configured access code"
         >
       </div>
 
@@ -117,7 +117,7 @@
         <span class="step-number step-number-gate">2</span>
         <div>
           <div class="heading-badge-row">
-            <h2>Review proposed AI plan</h2>
+            <h2 id="approval-heading" tabindex="-1">Review proposed AI plan</h2>
             <span class="badge badge-human-gate">Human Checkpoint</span>
           </div>
           <p>Nothing is built or previewed until you explicitly approve. Approval binds a short-lived server session.</p>
@@ -154,7 +154,7 @@
       <div class="step-heading">
         <span class="step-number step-number-success">3</span>
         <div>
-          <h2>Validated preview &amp; Ed25519 signed package</h2>
+          <h2 id="result-heading" tabindex="-1">Validated preview &amp; Ed25519 signed package</h2>
           <p>Build completed after human approval. Package receipt is cryptographically signed and verified.</p>
         </div>
       </div>
@@ -193,12 +193,10 @@
     <footer class="site-footer">
       <div class="footer-content">
         <p><strong>Solforge</strong> — Human-Gated AI Website Planning &amp; Verification</p>
-        <p class="footer-sub">Process tools: GPT-5.6 / Codex · Live inference: Qwen</p>
+        <p class="footer-sub">Reference inference: Qwen · Human approval required</p>
       </div>
       <nav class="footer-links" aria-label="Project links">
         <a href="./mission.html">Mission Society</a>
-        <a href="https://github.com/nanokataclysm/solforge-public" target="_blank" rel="noopener noreferrer">Public source</a>
-        <a href="https://github.com/nanokataclysm/solforge-public/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">Security</a>
       </nav>
     </footer>
   </main>

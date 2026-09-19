@@ -4,10 +4,13 @@
   "description": "NANOKAT Forge orchestrator — Qwen plan + human-gated preview",
   "main": "server.mjs",
   "scripts": {
-    "test": "VERCEL=0 node --test test/auth-session.test.mjs test/login-rate-limit.test.mjs test/login-rate-limit-route.test.mjs test/preview.test.mjs test/approval-session.test.mjs test/server.test.mjs test/signing.test.mjs test/package.test.mjs test/verification.test.mjs test/mission-society.test.mjs test/model-router.test.mjs test/vercel-entrypoint.test.mjs",
+    "test": "VERCEL=0 node --test --test-concurrency=1 test/preflight-vercel-preview.test.mjs test/auth-session.test.mjs test/login-rate-limit.test.mjs test/login-rate-limit-route.test.mjs test/preview.test.mjs test/approval-session.test.mjs test/server.test.mjs test/signing.test.mjs test/package.test.mjs test/verification.test.mjs test/mission-society.test.mjs test/model-router.test.mjs test/vercel-entrypoint.test.mjs test/media-provenance.test.mjs test/b2-object-verifier.test.mjs test/verified-media-package-forge.test.mjs test/verified-media-package-intent.test.mjs test/verified-media-package-route.test.mjs test/b2-get-file-info-adapter.test.mjs test/smoke-verified-media-package.test.mjs test/independent-media-package-verifier.test.mjs",
     "test:vercel-entrypoint": "node --test test/vercel-entrypoint.test.mjs",
     "start": "node server.mjs",
     "smoke": "node scripts/smoke-cli.mjs",
+    "smoke:verified-media": "node scripts/smoke-verified-media-package.mjs",
+    "verify:media-package": "node scripts/verify-media-package-signature.mjs",
+    "preflight:preview": "node scripts/preflight-vercel-preview.mjs",
     "validate-roles": "node ../../tools/validator/validate-solforge-roles.mjs"
   },
   "keywords": [
@@ -16,12 +19,11 @@
     "qwen"
   ],
   "author": "NANOKAT",
-  "license": "ISC",
+  "license": "MIT",
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.1.0",
     "express": "^5.2.1",
     "openai": "^6.48.0"
   },

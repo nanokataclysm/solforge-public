@@ -4,7 +4,6 @@ import {
   constantTimeSecretEqual,
   createAuthStore,
   createAuthStoreFromEnv,
-  createNeonAuthStore,
   createUpstashAuthStore,
   hashSessionToken,
 } from "../lib/auth-session.mjs";
@@ -46,48 +45,6 @@ describe("authentication sessions", () => {
     assert.equal(constantTimeSecretEqual(undefined, "correct"), false);
   });
 
-  it("checks Neon schema readiness with read-only SQL", async () => {
-    const queries = [];
-    const store = createNeonAuthStore({
-      sql: {
-        async query(text) {
-          queries.push(text);
-          return { rows: [] };
-        },
-      },
-    });
-
-    await store.ready();
-    assert.equal(queries.length, 1);
-    assert.match(queries[0], /SELECT token_hash, expires_at/i);
-    assert.doesNotMatch(queries[0], /\b(CREATE|ALTER|DROP)\b/i);
-  });
-
-  it("best-effort prunes expired Neon sessions after creation", async () => {
-    const queries = [];
-    const store = createNeonAuthStore({
-      ttlMs: 60_000,
-      sql: {
-        async query(text, params = []) {
-          queries.push({ text, params });
-          return { rows: [] };
-        },
-      },
-    });
-
-    const created = await store.create();
-
-    assert.match(created.token, /^[A-Za-z0-9_-]{43}$/);
-    assert.equal(queries.length, 3);
-    assert.match(queries[0].text, /SELECT token_hash, expires_at/i);
-    assert.match(queries[1].text, /INSERT INTO solforge_auth_sessions/i);
-    assert.equal(queries[1].params[0], hashSessionToken(created.token));
-    assert.match(
-      queries[2].text,
-      /DELETE FROM solforge_auth_sessions WHERE expires_at < now\(\)/i,
-    );
-  });
-
   it("uses only the token hash as the Upstash lookup key", async () => {
     const calls = [];
     const store = createUpstashAuthStore({
@@ -106,10 +63,39 @@ describe("authentication sessions", () => {
     );
   });
 
-  it("fails closed in production without durable credentials", () => {
+  it("selects Upstash in production even when stale Neon variables exist", () => {
+    const store = createAuthStoreFromEnv({
+      env: {
+        NODE_ENV: "production",
+        SOLFORGE_DATABASE_URL: "postgresql://ignored.invalid/db",
+        UPSTASH_REDIS_REST_URL: "https://example.invalid",
+        UPSTASH_REDIS_REST_TOKEN: "test-only",
+      },
+      fetchImpl: async () => ({
+        ok: true,
+        json: async () => ({ result: "PONG" }),
+      }),
+    });
+    assert.equal(store.backend, "upstash-redis");
+  });
+
+  it("rejects Neon-only production configuration", () => {
+    assert.throws(
+      () =>
+        createAuthStoreFromEnv({
+          env: {
+            NODE_ENV: "production",
+            SOLFORGE_DATABASE_URL: "postgresql://ignored.invalid/db",
+          },
+        }),
+      /requires Upstash Redis/i,
+    );
+  });
+
+  it("fails closed in production without Upstash credentials", () => {
     assert.throws(
       () => createAuthStoreFromEnv({ env: { NODE_ENV: "production" } }),
-      /durable authentication session store/i,
+      /requires Upstash Redis/i,
     );
   });
 });

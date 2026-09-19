@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "npm ci",
-  "buildCommand": "SOLFORGE_FORCE_MEMORY_STORE=1 NODE_ENV=test npm test",
+  "buildCommand": "VERCEL=0 SOLFORGE_FORCE_MEMORY_STORE=1 NODE_ENV=test npm test",
   "rewrites": [
     { "source": "/(.*)", "destination": "/api" }
   ],
