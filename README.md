@@ -69,7 +69,7 @@ State-changing `/api` requests require the application's CSRF header. Authentica
 
 ## Local development
 
-Use Node.js 24 to match the release gate. The package retains a broader Node `>=20` compatibility floor.
+Use Node.js 24 LTS (24.21.0 or newer within 24.x) to match the package and release gate. The exact validated version is in `apps/orchestrator/.nvmrc`.
 
 ```bash
 cd apps/orchestrator

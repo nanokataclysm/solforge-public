@@ -1,2 +1,3 @@
-mcp
-qdrant-client[fastembed]
+# MCP 2 replaces FastMCP and changes transport/schema APIs; retain supported 1.x.
+mcp>=1.30.0,<2
+qdrant-client[fastembed]>=1.19.1,<2
