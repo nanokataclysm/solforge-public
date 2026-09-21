@@ -18,11 +18,11 @@
   "author": "NANOKAT",
   "license": "ISC",
   "engines": {
-    "node": ">=20"
+    "node": ">=24.21.0 <25"
   },
   "dependencies": {
     "express": "^5.2.1",
-    "openai": "^6.48.0"
+    "openai": "^7.19.0"
   },
   "type": "module"
 }

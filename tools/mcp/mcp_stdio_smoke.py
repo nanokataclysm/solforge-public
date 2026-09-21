@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 
@@ -11,7 +12,7 @@ from mcp.client.stdio import stdio_client
 
 
 ROOT = Path(__file__).resolve().parent
-PYTHON = ROOT / ".venv-mcp" / "bin" / "python"
+PYTHON = sys.executable
 SERVER = ROOT / "nk_forge_mcp_server.py"
 
 

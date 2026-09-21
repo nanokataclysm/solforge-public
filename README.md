@@ -54,7 +54,7 @@ docs/               Public technical documentation
 
 ## Local development
 
-Requirements: Node.js 20 or newer and npm.
+Requirements: Node.js 24 LTS (24.21.0 or newer within 24.x) and npm. The exact validated version is in `apps/orchestrator/.nvmrc`.
 
 ```bash
 cd apps/orchestrator
